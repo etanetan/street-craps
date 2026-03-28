@@ -50,15 +50,10 @@ type joinGameResponse struct {
 }
 
 // POST /api/games
+// Creates an empty game. The host must then call /join to add themselves.
 func (h *GameHandler) CreateGame(w http.ResponseWriter, r *http.Request) {
 	var req createGameRequest
 	json.NewDecoder(r.Body).Decode(&req)
-	if req.DiceTheme == "" {
-		req.DiceTheme = "classic"
-	}
-
-	// Caller may or may not be authenticated
-	claims, _ := auth.ClaimsFrom(r.Context())
 
 	g := &models.Game{
 		ID:        uuid.New().String(),
@@ -69,34 +64,15 @@ func (h *GameHandler) CreateGame(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt: time.Now(),
 	}
 
-	// Create host player
-	playerID := uuid.New().String()
-	userID := ""
-	username := "Host"
-	if claims != nil {
-		userID = claims.UserID
-		username = claims.Username
-	}
-	g.HostID = playerID
-
-	err := game.AddPlayer(g, playerID, userID, username, 0, req.DiceTheme, 0) // buy-in set on join
-	if err != nil {
-		writeError(w, http.StatusBadRequest, "add_player_error", err.Error())
-		return
-	}
-	// Host has no buy-in yet; will be set at join
 	h.manager.Set(g)
 	if err := h.games.Save(r.Context(), g); err != nil {
 		writeError(w, http.StatusInternalServerError, "server_error", "Failed to save game")
 		return
 	}
 
-	token, _ := h.jwt.SignPlayerToken(playerID, g.ID, userID, username, claims == nil)
-	writeJSON(w, http.StatusCreated, createGameResponse{
-		GameID:   g.ID,
-		Code:     g.Code,
-		PlayerID: playerID,
-		Token:    token,
+	writeJSON(w, http.StatusCreated, map[string]string{
+		"gameId": g.ID,
+		"code":   g.Code,
 	})
 }
 
@@ -165,6 +141,10 @@ func (h *GameHandler) JoinGame(w http.ResponseWriter, r *http.Request) {
 
 	playerID := uuid.New().String()
 	seatOrder := len(g.Players)
+	// First player to join becomes host
+	if g.HostID == "" {
+		g.HostID = playerID
+	}
 	if err := game.AddPlayer(g, playerID, userID, req.Name, req.BuyIn, req.DiceTheme, seatOrder); err != nil {
 		writeError(w, http.StatusBadRequest, "join_error", err.Error())
 		return

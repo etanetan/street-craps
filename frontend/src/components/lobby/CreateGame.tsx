@@ -33,22 +33,23 @@ export default function CreateGame() {
     setLoading(true);
     try {
       const res = await api.post('/api/games', { diceTheme: theme });
-      const { gameId, code, playerId, playerToken } = res.data;
+      const { gameId, code } = res.data;
 
-      // Join own game with buy-in
+      // Join own game as host
       const joinRes = await api.post(`/api/games/${gameId}/join`, {
         name: name.trim(),
         buyIn: buyInCents,
         diceTheme: theme,
       });
 
-      dispatch(setMyPlayer({ playerId: joinRes.data.playerId || playerId, playerToken }));
+      const { playerId, playerToken } = joinRes.data;
+      dispatch(setMyPlayer({ playerId, playerToken }));
       dispatch(setGame(joinRes.data.game));
       dispatch(setDiceTheme(theme));
 
       // Persist session for reload recovery
       localStorage.setItem(`craps_session_${code}`, JSON.stringify({
-        playerId: joinRes.data.playerId || playerId,
+        playerId,
         playerToken,
         gameId,
       }));
