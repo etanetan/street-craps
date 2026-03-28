@@ -92,6 +92,8 @@ export function useWebSocket(gameId: string | null) {
       }
       case MSG.DICE_ROLLED:
         dispatch(diceRolled(payload as DiceRolledPayload));
+        // Hold GAME_STATE until dice animation completes (~950ms)
+        holdGameStateUntil.current = Date.now() + 950;
         break;
       case MSG.BETS_RESOLVED:
         dispatch(betResultsQueued(payload as BetsResolvedPayload));
