@@ -191,7 +191,7 @@ export default function GameTable({ send }: Props) {
           {/* ── MOBILE layout (< lg) ── */}
           <div className="lg:hidden flex flex-col min-h-screen">
             {/* Top bar: phase + players */}
-            <div className="flex items-center justify-between px-4 pt-4 pb-2 gap-3">
+            <div className="flex items-center justify-between px-4 pt-2 pb-1 gap-3">
               <div className={`px-3 py-1 rounded-full text-xs font-medium shrink-0 ${
                 game.phase === 'COME_OUT' ? 'bg-blue-900/50 text-blue-300 border border-blue-700'
                 : 'bg-yellow-900/50 text-yellow-300 border border-yellow-700'
@@ -213,9 +213,9 @@ export default function GameTable({ send }: Props) {
             </div>
 
             {/* Dice area */}
-            <div className="flex flex-col items-center py-2">
-              <PointMarker point={game.point} />
-              <DiceArea />
+            <div className="flex flex-col items-center">
+              <PointMarker point={game.point} mobile />
+              <DiceArea mobile />
             </div>
 
             {/* Scrollable middle: active bets + betting buttons */}
