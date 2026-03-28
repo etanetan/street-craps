@@ -55,13 +55,13 @@ export default function ShooterSelector({ send }: Props) {
           return (
             <div
               key={p.id}
-              className="flex flex-col items-center gap-3 bg-gray-900 border border-gray-700 rounded-xl p-4 w-36"
+              className="flex flex-col items-center gap-3 bg-gray-900 border border-gray-700 rounded-xl p-4 w-28 md:w-36"
             >
               <div className="text-sm font-medium text-gray-300">
                 {p.name}
                 {p.id === myPlayerId && <span className="text-gray-500 ml-1">(you)</span>}
               </div>
-              <div className="text-7xl">{die ? CLASSIC_FACES[die] : '⬜'}</div>
+              <div className="text-5xl md:text-7xl">{die ? CLASSIC_FACES[die] : '⬜'}</div>
               <div className={`text-sm font-bold ${die ? 'text-white' : 'text-gray-600'}`}>
                 {die ? `Rolled ${die}` : 'Waiting...'}
               </div>
@@ -74,7 +74,7 @@ export default function ShooterSelector({ send }: Props) {
         <button
           onClick={handleRoll}
           disabled={rolled}
-          className="bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-bold py-4 px-10 rounded-xl text-xl transition-colors pulse-glow"
+          className="bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-bold py-3 px-8 md:py-4 md:px-10 rounded-xl text-lg md:text-xl transition-colors pulse-glow"
         >
           Roll!
         </button>
