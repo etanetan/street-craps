@@ -109,18 +109,8 @@ const gameSlice = createSlice({
       if (myResults.length === 0) return;
 
       const net = myResults.reduce((sum, r) => sum + r.netChips, 0);
-      const total = state.pendingRoll ? state.pendingRoll.die1 + state.pendingRoll.die2 : 0;
-
-      let label = '';
-      if (state.game.phase === 'COME_OUT') {
-        if (total === 7 || total === 11) label = 'Natural!';
-        else if (total === 2 || total === 3 || total === 12) label = 'Craps!';
-      } else if (state.game.phase === 'POINT_PHASE') {
-        if (total === state.game.point) label = 'Point hit!';
-        else if (total === 7) label = 'Seven out!';
-      }
-
-      state.rollOutcome = { net, label };
+      // Use pendingRollLabel — computed in diceRolled before any phase transitions apply
+      state.rollOutcome = { net, label: state.pendingRollLabel };
     },
 
     clearRollOutcome(state) {
