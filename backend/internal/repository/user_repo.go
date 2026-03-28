@@ -87,6 +87,29 @@ func (r *UserRepo) GetByEmail(ctx context.Context, email string) (*models.User, 
 	return &u, nil
 }
 
+// RecordGameEnd appends a cumulative chip history data point for chart display.
+func (r *UserRepo) RecordGameEnd(ctx context.Context, userID string) error {
+	ref := r.db.Collection(usersCollection).Doc(userID)
+	return r.db.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
+		doc, err := tx.Get(ref)
+		if err != nil {
+			return err
+		}
+		var u models.User
+		if err := doc.DataTo(&u); err != nil {
+			return err
+		}
+		u.Stats.ChipHistory = append(u.Stats.ChipHistory, models.ChipDataPoint{
+			T: time.Now().UnixMilli(),
+			V: u.Stats.NetChips,
+		})
+		if len(u.Stats.ChipHistory) > 200 {
+			u.Stats.ChipHistory = u.Stats.ChipHistory[len(u.Stats.ChipHistory)-200:]
+		}
+		return tx.Set(ref, u)
+	})
+}
+
 func (r *UserRepo) UpdateStats(ctx context.Context, userID string, delta models.UserStats) error {
 	ref := r.db.Collection(usersCollection).Doc(userID)
 	return r.db.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {

@@ -14,12 +14,15 @@ const (
 	MsgRemoveBet         = "REMOVE_BET"
 	MsgRollDice          = "ROLL_DICE"
 	MsgStartGame         = "START_GAME"
+	MsgTopUp             = "TOP_UP"
+	MsgEndGame           = "END_GAME"
 	MsgPing              = "PING"
 )
 
 // Server → Client message types
 const (
 	MsgGameState         = "GAME_STATE"
+	MsgGameEnded         = "GAME_ENDED"
 	MsgPlayerJoined      = "PLAYER_JOINED"
 	MsgPlayerConnection  = "PLAYER_CONNECTION"
 	MsgDeterminationRoll = "DETERMINATION_ROLL"
@@ -110,6 +113,19 @@ type BetRemovedPayload struct {
 	BetID       string `json:"betId"`
 	PlayerID    string `json:"playerId"`
 	PlayerChips int64  `json:"playerChips"`
+}
+
+type TopUpPayload struct {
+	GameID string `json:"gameId"`
+	Amount int64  `json:"amount"` // cents
+}
+
+type EndGamePayload struct {
+	GameID string `json:"gameId"`
+}
+
+type GameEndedPayload struct {
+	GameID string `json:"gameId"`
 }
 
 type ErrorPayload struct {

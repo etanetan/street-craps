@@ -107,6 +107,12 @@ func (h *WSHandler) OnMessage(c *hub.Client, raw []byte) {
 	case models.MsgPing:
 		c.Send(models.MsgPong, nil)
 
+	case models.MsgTopUp:
+		h.handleTopUp(ctx, c, msg.Payload)
+
+	case models.MsgEndGame:
+		h.handleEndGame(ctx, c, msg.Payload)
+
 	case models.MsgStartGame:
 		h.handleStartGame(ctx, c, msg.Payload)
 
@@ -377,4 +383,54 @@ func (h *WSHandler) updateRollStats(ctx context.Context, g *models.Game, result 
 			log.Printf("updateStats error: %v", err)
 		}
 	}
+}
+
+func (h *WSHandler) handleTopUp(ctx context.Context, c *hub.Client, raw json.RawMessage) {
+	var p models.TopUpPayload
+	if err := json.Unmarshal(raw, &p); err != nil {
+		c.Send(models.MsgError, models.ErrorPayload{Code: "parse_error", Message: "Bad payload"})
+		return
+	}
+	if p.Amount <= 0 {
+		c.Send(models.MsgError, models.ErrorPayload{Code: "invalid_amount", Message: "Amount must be positive"})
+		return
+	}
+
+	g, ok := h.getGame(ctx, p.GameID)
+	if !ok {
+		c.Send(models.MsgError, models.ErrorPayload{Code: "not_found", Message: "Game not found"})
+		return
+	}
+
+	for i := range g.Players {
+		if g.Players[i].ID == c.PlayerID {
+			g.Players[i].Chips += p.Amount
+			break
+		}
+	}
+
+	h.saveAndBroadcast(ctx, g)
+}
+
+func (h *WSHandler) handleEndGame(ctx context.Context, c *hub.Client, raw json.RawMessage) {
+	var p models.EndGamePayload
+	if err := json.Unmarshal(raw, &p); err != nil {
+		c.Send(models.MsgError, models.ErrorPayload{Code: "parse_error", Message: "Bad payload"})
+		return
+	}
+
+	g, ok := h.getGame(ctx, p.GameID)
+	if !ok {
+		return
+	}
+
+	// Record a chip history data point for each logged-in player
+	for _, pl := range g.Players {
+		if pl.UserID != "" {
+			go h.users.RecordGameEnd(ctx, pl.UserID)
+		}
+	}
+
+	// Broadcast game ended to all players so they can navigate away
+	h.hub.Broadcast(g.ID, models.MsgGameEnded, models.GameEndedPayload{GameID: g.ID})
 }

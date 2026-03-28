@@ -5,6 +5,7 @@ import type { RootState, AppDispatch } from '../store/store';
 import { setDiceTheme, setDiceAnimStyle } from '../store/uiSlice';
 import type { DiceTheme, DiceAnimStyle } from '../store/uiSlice';
 import { DieFaceCSS } from '../components/game/DiceArea';
+import ChipChart from '../components/shared/ChipChart';
 import api from '../services/api';
 import { formatChips } from '../utils/format';
 
@@ -14,6 +15,7 @@ interface Stats {
   netChips: number;
   biggestWin: number;
   biggestLoss: number;
+  chipHistory?: { t: number; v: number }[];
 }
 
 const THEMES: { id: DiceTheme; label: string; description: string }[] = [
@@ -147,13 +149,20 @@ export default function StatsPage() {
         {loading ? (
           <div className="text-gray-400 text-sm">Loading stats...</div>
         ) : stats ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <StatCard label="Games Played" value={String(stats.gamesPlayed)} />
-            <StatCard label="Dice Rolled" value={String(stats.diceRolled)} />
-            <StatCard label="Net Profit/Loss" value={formatChips(Math.abs(stats.netChips))} valueClass={netColor} />
-            <StatCard label="Biggest Win" value={formatChips(stats.biggestWin)} valueClass="text-green-400" />
-            <StatCard label="Biggest Loss" value={formatChips(Math.abs(stats.biggestLoss))} valueClass="text-red-400" />
-          </div>
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+              <StatCard label="Games Played" value={String(stats.gamesPlayed)} />
+              <StatCard label="Dice Rolled" value={String(stats.diceRolled)} />
+              <StatCard label="Net Profit/Loss" value={formatChips(Math.abs(stats.netChips))} valueClass={netColor} />
+              <StatCard label="Biggest Win" value={formatChips(stats.biggestWin)} valueClass="text-green-400" />
+              <StatCard label="Biggest Loss" value={formatChips(Math.abs(stats.biggestLoss))} valueClass="text-red-400" />
+            </div>
+            {/* Chip history chart */}
+            <div className="bg-gray-900 border border-gray-700 rounded-xl p-4">
+              <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">Cumulative Profit / Loss by Game</h3>
+              <ChipChart data={stats.chipHistory ?? []} />
+            </div>
+          </>
         ) : (
           <p className="text-gray-400">No stats yet — play a game!</p>
         )}

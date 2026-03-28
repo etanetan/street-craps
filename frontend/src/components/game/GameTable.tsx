@@ -9,6 +9,7 @@ import GameLog from './GameLog';
 import PlayerList from './PlayerList';
 import PointMarker from './PointMarker';
 import ShooterSelector from './ShooterSelector';
+import BustModal from './BustModal';
 import WaitingRoom from '../lobby/WaitingRoom';
 
 interface Props {
@@ -20,6 +21,10 @@ export default function GameTable({ send }: Props) {
   const game = useSelector((s: RootState) => s.game.game);
   const myPlayerId = useSelector((s: RootState) => s.game.myPlayerId);
   const wsConnected = useSelector((s: RootState) => s.game.wsConnected);
+  // Show bust modal when any player in an active game hits 0 chips
+  const bustedPlayer = (game?.phase === 'COME_OUT' || game?.phase === 'POINT_PHASE')
+    ? game.players.find(p => p.chips === 0)
+    : undefined;
   const error = useSelector((s: RootState) => s.game.lastError);
   const rollOutcome = useSelector((s: RootState) => s.game.rollOutcome);
   const [showHistory, setShowHistory] = useState(false);
@@ -83,6 +88,14 @@ export default function GameTable({ send }: Props) {
             <GameLog />
           </div>
         </div>
+      )}
+
+      {bustedPlayer && game && (
+        <BustModal
+          gameId={game.id}
+          playerName={bustedPlayer.name}
+          send={send}
+        />
       )}
 
       {game.phase === 'WAITING' && <WaitingRoom send={send} />}

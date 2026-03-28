@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import type { AppDispatch, RootState } from '../store/store';
 import { MSG } from '../types/websocket';
 import type {
@@ -33,6 +34,7 @@ const MAX_BACKOFF = 30_000;
 
 export function useWebSocket(gameId: string | null) {
   const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
   const playerToken = useSelector((s: RootState) => s.game.myPlayerToken);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -160,6 +162,9 @@ export function useWebSocket(gameId: string | null) {
         holdGameStateUntil.current = Date.now() + 2500;
         break;
       }
+      case MSG.GAME_ENDED:
+        navigate('/');
+        break;
       case MSG.ERROR: {
         const e = payload as { message: string };
         dispatch(setError(e.message));
