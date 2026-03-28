@@ -84,16 +84,20 @@ export default function BettingPanel({ send, mobile = false }: Props) {
 
       {/* Active bets — compact pills on mobile, full card on desktop */}
       {mobile ? (
-        <div className="relative" style={{ height: 28 }}>
-          <div className="absolute inset-0 flex items-center gap-1.5 overflow-x-auto overflow-y-hidden">
-            {myBets.map((b) => (
-              <div key={b.id} className="flex items-center gap-1 bg-green-900/40 border border-green-800 rounded-full px-2.5 py-1 text-xs shrink-0">
-                <span className="text-gray-300">{betLabel(b.type, b.number)}</span>
-                <span className="text-green-400 font-mono font-bold">{formatChips(b.amount)}</span>
-              </div>
-            ))}
+        <>
+          <div className="relative" style={{ height: 28 }}>
+            <div className="absolute inset-0 flex items-center gap-1.5 overflow-x-auto overflow-y-hidden">
+              {myBets.map((b) => (
+                <div key={b.id} className="flex items-center gap-1 bg-green-900/40 border border-green-800 rounded-full px-2.5 py-1 text-xs shrink-0">
+                  <span className="text-gray-300">{betLabel(b.type, b.number)}</span>
+                  <span className="text-green-400 font-mono font-bold">{formatChips(b.amount)}</span>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+          {/* Spacer — pushes controls into thumb zone */}
+          <div className="flex-1" />
+        </>
       ) : (
         <div className="bg-gray-900 border border-green-900 rounded-xl p-4">
           <div className="flex items-center justify-between mb-3">
@@ -194,7 +198,7 @@ export default function BettingPanel({ send, mobile = false }: Props) {
 
       {/* Roll button */}
       {isShooter && (
-        <div className={mobile ? 'mt-auto pb-1' : ''}>
+        <div className={mobile ? 'pb-1' : ''}>
           <button
             onClick={handleRoll}
             className={`w-full text-white font-bold rounded-xl bg-green-600 hover:bg-green-500 pulse-glow transition-colors ${mobile ? 'py-3 text-lg' : 'py-5 text-2xl'}`}
@@ -205,7 +209,7 @@ export default function BettingPanel({ send, mobile = false }: Props) {
       )}
 
       {!isShooter && (
-        <div className={`text-center text-sm text-gray-500 py-2 ${mobile ? 'mt-auto' : ''}`}>
+        <div className="text-center text-sm text-gray-500 py-2">
           Waiting for shooter to roll...
         </div>
       )}
