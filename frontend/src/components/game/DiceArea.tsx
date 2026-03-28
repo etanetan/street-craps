@@ -81,7 +81,7 @@ export function DieFaceCSS({ value, theme = 'classic', animClass = '', size = 11
   );
 }
 
-export default function DiceArea({ mobile = false }: { mobile?: boolean }) {
+export default function DiceArea({ mobile = false, point = 0 }: { mobile?: boolean; point?: number }) {
   const dispatch = useDispatch<AppDispatch>();
   const pendingRoll = useSelector((s: RootState) => s.game.pendingRoll);
   const animState = useSelector((s: RootState) => s.game.diceAnimation);
@@ -89,12 +89,10 @@ export default function DiceArea({ mobile = false }: { mobile?: boolean }) {
   const localAnimStyle = useSelector((s: RootState) => s.ui.selectedDiceAnimStyle);
   const rollLabel = useSelector((s: RootState) => s.game.pendingRollLabel);
   const game = useSelector((s: RootState) => s.game.game);
-  // Seed from last roll in history so dice show correct values on load/reconnect
   const lastRoll = game?.rollHistory?.[game.rollHistory.length - 1];
   const [displayDie1, setDisplayDie1] = useState(lastRoll?.die1 ?? 0);
   const [displayDie2, setDisplayDie2] = useState(lastRoll?.die2 ?? 0);
 
-  // Keep display in sync if game loads/changes while no animation is playing
   useEffect(() => {
     if (animState !== 'shaking' && lastRoll) {
       setDisplayDie1(lastRoll.die1);
@@ -102,11 +100,9 @@ export default function DiceArea({ mobile = false }: { mobile?: boolean }) {
     }
   }, [lastRoll?.die1, lastRoll?.die2, animState]);
 
-  // Use the shooter's dice preferences if available, otherwise local preference
   const shooter = game?.players.find(p => p.isShooter);
   const diceTheme = shooter?.diceTheme || localTheme;
   const diceAnimStyle = shooter?.diceAnimStyle || localAnimStyle;
-
   const animClass = animState === 'shaking' ? (ANIM_CLASS[diceAnimStyle] || 'dice-anim-shake') : '';
 
   useEffect(() => {
@@ -121,20 +117,51 @@ export default function DiceArea({ mobile = false }: { mobile?: boolean }) {
   }, [animState, pendingRoll, dispatch]);
 
   const total = displayDie1 + displayDie2;
+  const isOn = point > 0;
 
-  const diceSize = mobile ? 76 : 112;
+  if (mobile) {
+    return (
+      <div className="flex items-center justify-center gap-3 px-4 py-3 w-full">
+        {/* Point marker — fixed width so layout never shifts */}
+        <div className="flex flex-col items-center justify-center w-12 shrink-0">
+          <div className={`w-10 h-10 rounded-full border-4 flex items-center justify-center font-bold text-xs transition-all ${
+            isOn ? 'border-white bg-white text-gray-900 shadow-lg' : 'border-gray-600 bg-gray-800 text-gray-500'
+          }`}>
+            {isOn ? 'ON' : 'OFF'}
+          </div>
+          {isOn && <div className="text-sm font-bold text-yellow-400 mt-0.5">{point}</div>}
+        </div>
+
+        {/* Dice */}
+        <div className="flex gap-3 items-center justify-center">
+          <DieFaceCSS value={displayDie1} theme={diceTheme} animClass={animClass} size={76} />
+          <DieFaceCSS value={displayDie2} theme={diceTheme} animClass={animClass} size={76} />
+        </div>
+
+        {/* Total + label — fixed width so layout never shifts */}
+        <div className="w-14 shrink-0 text-center">
+          {total > 0 && animState !== 'shaking' && (
+            <div className="fade-in-up">
+              <div className="text-2xl font-bold text-white">{total}</div>
+              {rollLabel && <div className="text-xs text-gray-300 leading-tight mt-0.5">{rollLabel}</div>}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className={`flex flex-col items-center w-full ${mobile ? 'gap-2 py-2' : 'gap-4 py-6'}`}>
-      <div className={`flex items-center justify-center ${mobile ? 'gap-4' : 'gap-6'}`}>
-        <DieFaceCSS value={displayDie1} theme={diceTheme} animClass={animClass} size={diceSize} />
-        <DieFaceCSS value={displayDie2} theme={diceTheme} animClass={animClass} size={diceSize} />
+    <div className="flex flex-col items-center gap-4 py-6 w-full">
+      <div className="flex gap-6 items-center justify-center">
+        <DieFaceCSS value={displayDie1} theme={diceTheme} animClass={animClass} size={112} />
+        <DieFaceCSS value={displayDie2} theme={diceTheme} animClass={animClass} size={112} />
       </div>
 
-      <div className="text-center" style={{ minHeight: mobile ? '2rem' : '2.75rem' }}>
+      <div className="text-center" style={{ minHeight: '2.75rem' }}>
         {total > 0 && animState !== 'shaking' && (
           <div className="fade-in-up">
-            <div className={`font-bold text-white ${mobile ? 'text-2xl' : 'text-3xl'}`}>{total}</div>
+            <div className="text-3xl font-bold text-white">{total}</div>
             {rollLabel && <div className="text-sm text-gray-300 mt-0.5">{rollLabel}</div>}
           </div>
         )}

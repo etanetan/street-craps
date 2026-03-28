@@ -72,7 +72,7 @@ export default function BettingPanel({ send, mobile = false }: Props) {
   const hasPassLine = myBets.some(b => b.type === 'PASS_LINE' || b.type === 'DONT_PASS');
 
   return (
-    <div className="space-y-3">
+    <div className={mobile ? 'flex flex-col h-full gap-2' : 'space-y-3'}>
       {/* Toast */}
       <div className="relative h-0">
         {justPlaced && (
@@ -192,9 +192,9 @@ export default function BettingPanel({ send, mobile = false }: Props) {
         </div>
       )}
 
-      {/* Roll button — sticky on mobile so it's always reachable */}
+      {/* Roll button */}
       {isShooter && (
-        <div className={mobile ? 'sticky bottom-0 pt-2 pb-1 bg-gray-950' : ''}>
+        <div className={mobile ? 'mt-auto pb-1' : ''}>
           <button
             onClick={handleRoll}
             className={`w-full text-white font-bold rounded-xl bg-green-600 hover:bg-green-500 pulse-glow transition-colors ${mobile ? 'py-3 text-lg' : 'py-5 text-2xl'}`}
@@ -205,7 +205,7 @@ export default function BettingPanel({ send, mobile = false }: Props) {
       )}
 
       {!isShooter && (
-        <div className="text-center text-sm text-gray-500 py-2">
+        <div className={`text-center text-sm text-gray-500 py-2 ${mobile ? 'mt-auto' : ''}`}>
           Waiting for shooter to roll...
         </div>
       )}
