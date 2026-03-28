@@ -203,14 +203,28 @@ export default function BettingPanel({ send, mobile = false }: Props) {
       </div>
 
       {/* Roll button — shooter only */}
-      {isShooter && (
-        <button
-          onClick={handleRoll}
-          className={`w-full bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl transition-colors pulse-glow ${mobile ? 'py-4 text-xl' : 'py-5 text-2xl'}`}
-        >
-          🎲 Roll Dice
-        </button>
-      )}
+      {isShooter && (() => {
+        const hasPassLineBet = myBets.some(b => b.type === 'PASS_LINE' || b.type === 'DONT_PASS');
+        const needsBet = isComeOut && !hasPassLineBet;
+        return (
+          <div>
+            <button
+              onClick={handleRoll}
+              disabled={needsBet}
+              className={`w-full text-white font-bold rounded-xl transition-colors ${mobile ? 'py-4 text-xl' : 'py-5 text-2xl'} ${
+                needsBet
+                  ? 'bg-gray-700 opacity-50 cursor-not-allowed'
+                  : 'bg-green-600 hover:bg-green-500 pulse-glow'
+              }`}
+            >
+              🎲 Roll Dice
+            </button>
+            {needsBet && (
+              <p className="text-center text-xs text-yellow-500 mt-1.5">Place a Pass Line or Don't Pass bet first</p>
+            )}
+          </div>
+        );
+      })()}
 
       {!isShooter && (
         <div className="text-center text-sm text-gray-500 py-2">
