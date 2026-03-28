@@ -56,7 +56,7 @@ export default function CreateGame() {
   };
 
   return (
-    <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 w-full max-w-sm">
+    <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 w-full max-w-sm mx-auto">
       <h2 className="text-lg font-bold text-white mb-4">Create New Game</h2>
       <form onSubmit={handleCreate} className="space-y-4">
         {error && (

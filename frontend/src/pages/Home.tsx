@@ -49,7 +49,7 @@ export default function Home() {
           </button>
         </div>
 
-        <div className="flex-1">
+        <div className="flex-1 flex flex-col items-center">
           {tab === 'create' ? <CreateGame /> : <JoinGame />}
         </div>
       </div>
