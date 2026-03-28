@@ -79,7 +79,7 @@ export default function JoinGame({ initialCode = '', mobile = false }: Props) {
             placeholder="XXXXXX"
             maxLength={6}
             className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-4 text-white font-mono text-2xl text-center tracking-[0.3em] focus:outline-none focus:border-green-500"
-            required autoFocus
+            required
           />
         </div>
         <div>
