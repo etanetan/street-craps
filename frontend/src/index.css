@@ -13,12 +13,10 @@
   }
 }
 
-/* Lock scroll on mobile (< lg breakpoint) */
+/* Prevent pull-to-refresh on mobile (game screen manages its own scroll lock) */
 @media (max-width: 1023px) {
-  html, body, #root {
-    overflow: hidden;
+  html, body {
     overscroll-behavior: none;
-    height: 100dvh;
   }
 }
 
