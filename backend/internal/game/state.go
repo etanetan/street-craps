@@ -278,7 +278,9 @@ func AutoMatchPlaceBet(g *models.Game, shooterBet *models.Bet) []models.Bet {
 }
 
 // ApproveBetRequest accepts a pending bet request: creates the fader's counter-bet
-// for whatever chips they have available (up to faderCanCover) and removes the request.
+// using their current chips (capped at the required lay amount) and removes the request.
+// This uses current chip count, not the stale FaderCanCover snapshot, so a top-up
+// that happened after the request was created is reflected correctly.
 func ApproveBetRequest(g *models.Game, faderPlayerID, requestID string) (*models.Bet, error) {
 	reqIdx := -1
 	for i, r := range g.PendingBetRequests {
@@ -297,9 +299,18 @@ func ApproveBetRequest(g *models.Game, faderPlayerID, requestID string) (*models
 	if fidx < 0 {
 		return nil, errors.New("fader not found")
 	}
-	amt := req.FaderCanCover
-	if g.Players[fidx].Chips < amt {
-		amt = g.Players[fidx].Chips
+
+	// Compute the required lay amount from current bet parameters
+	required := req.Amount // DONT_PASS matches 1:1
+	if req.BetType == models.BetPlace {
+		num, den := PlacePayout(req.Number)
+		required = req.Amount * num / den
+	}
+
+	// Cover as much as fader can, up to the required amount
+	amt := g.Players[fidx].Chips
+	if amt > required {
+		amt = required
 	}
 	if amt <= 0 {
 		return nil, errors.New("fader has no chips to cover")
