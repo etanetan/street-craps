@@ -1,18 +1,10 @@
 import { useState } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import type { AppDispatch } from '../../store/store';
+import type { AppDispatch, RootState } from '../../store/store';
 import { setMyPlayer, setGame } from '../../store/gameSlice';
-import { setDiceTheme } from '../../store/uiSlice';
-import type { DiceTheme } from '../../store/uiSlice';
 import api from '../../services/api';
 import { centsFromDollars } from '../../utils/format';
-
-const THEMES: { id: DiceTheme; label: string; preview: string }[] = [
-  { id: 'classic', label: 'Classic', preview: '⚀⚃' },
-  { id: 'neon', label: 'Neon', preview: '🎲🎲' },
-  { id: 'casino', label: 'Casino', preview: '🎰🎰' },
-];
 
 interface Props {
   initialCode?: string;
@@ -21,10 +13,10 @@ interface Props {
 export default function JoinGame({ initialCode = '' }: Props) {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
+  const theme = useSelector((s: RootState) => s.ui.selectedDiceTheme);
   const [code, setCode] = useState(initialCode.toUpperCase());
   const [name, setName] = useState('');
   const [buyIn, setBuyIn] = useState('100');
-  const [theme, setTheme] = useState<DiceTheme>('classic');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -51,7 +43,6 @@ export default function JoinGame({ initialCode = '' }: Props) {
       const { playerId, playerToken } = joinRes.data;
       dispatch(setMyPlayer({ playerId, playerToken }));
       dispatch(setGame(joinRes.data.game));
-      dispatch(setDiceTheme(theme));
 
       localStorage.setItem(`craps_session_${code.trim()}`, JSON.stringify({
         playerId,
@@ -110,26 +101,6 @@ export default function JoinGame({ initialCode = '' }: Props) {
             className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-green-500"
             required
           />
-        </div>
-        <div>
-          <label className="block text-sm text-gray-400 mb-2">Dice Theme</label>
-          <div className="grid grid-cols-3 gap-2">
-            {THEMES.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setTheme(t.id)}
-                className={`p-3 rounded-lg border text-center transition-colors ${
-                  theme === t.id
-                    ? 'border-green-500 bg-green-900/30 text-green-400'
-                    : 'border-gray-700 bg-gray-800 text-gray-400 hover:border-gray-500'
-                }`}
-              >
-                <div className="text-xl">{t.preview}</div>
-                <div className="text-xs mt-1">{t.label}</div>
-              </button>
-            ))}
-          </div>
         </div>
         <button
           type="submit"

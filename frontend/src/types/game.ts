@@ -32,6 +32,7 @@ export interface DiceRoll {
   die2: number;
   total: number;
   rolledBy: string;
+  phase: GamePhase;
   timestamp: string;
 }
 

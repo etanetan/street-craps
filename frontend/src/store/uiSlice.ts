@@ -1,7 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 
-export type DiceTheme = 'classic' | 'neon' | 'casino';
+export type DiceTheme = 'classic' | 'neon' | 'casino' | 'bone' | 'obsidian';
 
 interface UIState {
   selectedDiceTheme: DiceTheme;
@@ -10,8 +10,11 @@ interface UIState {
   notification: string | null;
 }
 
+const savedTheme = localStorage.getItem('craps_dice_theme') as DiceTheme | null;
+const validThemes: DiceTheme[] = ['classic', 'neon', 'casino', 'bone', 'obsidian'];
+
 const initialState: UIState = {
-  selectedDiceTheme: 'classic',
+  selectedDiceTheme: savedTheme && validThemes.includes(savedTheme) ? savedTheme : 'classic',
   showPayoutModal: false,
   payoutMessage: '',
   notification: null,
@@ -23,6 +26,7 @@ const uiSlice = createSlice({
   reducers: {
     setDiceTheme(state, action: PayloadAction<DiceTheme>) {
       state.selectedDiceTheme = action.payload;
+      localStorage.setItem('craps_dice_theme', action.payload);
     },
     showPayout(state, action: PayloadAction<string>) {
       state.showPayoutModal = true;

@@ -32,11 +32,17 @@ export function DieFaceCSS({ value, theme = 'classic', animState = 'done', size 
       ? { background: '#0f0520', border: '2px solid #a855f7', boxShadow: '0 0 18px rgba(168,85,247,0.6)', borderRadius: radius }
       : theme === 'casino'
       ? { background: '#1a0000', border: '2px solid #dc2626', boxShadow: '0 0 18px rgba(220,38,38,0.5)', borderRadius: radius }
+      : theme === 'bone'
+      ? { background: '#f5f0e8', border: '1.5px solid #c8b89a', boxShadow: '0 4px 14px rgba(0,0,0,0.3)', borderRadius: radius * 1.4 }
+      : theme === 'obsidian'
+      ? { background: '#111418', border: '2px solid #b8860b', boxShadow: '0 0 16px rgba(184,134,11,0.4)', borderRadius: radius }
       : { background: '#ffffff', border: '1.5px solid #d1d5db', boxShadow: '0 4px 14px rgba(0,0,0,0.35)', borderRadius: radius };
 
   const dotColor =
     theme === 'neon' ? '#d8b4fe' :
     theme === 'casino' ? '#f8fafc' :
+    theme === 'bone' ? '#3d2b1f' :
+    theme === 'obsidian' ? '#d4a017' :
     '#111827';
 
   return (
@@ -72,10 +78,15 @@ export default function DiceArea() {
   const dispatch = useDispatch<AppDispatch>();
   const pendingRoll = useSelector((s: RootState) => s.game.pendingRoll);
   const animState = useSelector((s: RootState) => s.game.diceAnimation);
-  const diceTheme = useSelector((s: RootState) => s.ui.selectedDiceTheme);
+  const localTheme = useSelector((s: RootState) => s.ui.selectedDiceTheme);
   const rollLabel = useSelector((s: RootState) => s.game.pendingRollLabel);
+  const game = useSelector((s: RootState) => s.game.game);
   const [displayDie1, setDisplayDie1] = useState(0);
   const [displayDie2, setDisplayDie2] = useState(0);
+
+  // Use the shooter's dice theme if available, otherwise fall back to local preference
+  const shooter = game?.players.find(p => p.isShooter);
+  const diceTheme = shooter?.diceTheme || localTheme;
 
   useEffect(() => {
     if (animState === 'shaking' && pendingRoll) {
@@ -106,4 +117,3 @@ export default function DiceArea() {
     </div>
   );
 }
-

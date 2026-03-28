@@ -131,6 +131,10 @@ func PlaceBet(g *models.Game, playerID string, betType models.BetType, amount in
 	if IsPassPhaseBet(betType) && g.Phase != models.PhasePoint {
 		return nil, errors.New("that bet is only available after point is set")
 	}
+	// Shooter cannot bet against themselves on come-out
+	if betType == models.BetDontPass && playerID == g.ShooterID {
+		return nil, errors.New("shooter must bet Pass Line, not Don't Pass")
+	}
 	if amount <= 0 {
 		return nil, errors.New("bet amount must be positive")
 	}
@@ -237,6 +241,7 @@ func RollDice(g *models.Game, callerID string) (*RollResult, error) {
 		Die2:      die2,
 		Total:     total,
 		RolledBy:  callerID,
+		Phase:     g.Phase,
 		Timestamp: time.Now(),
 	})
 

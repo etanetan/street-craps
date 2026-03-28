@@ -49,6 +49,7 @@ type DiceRoll struct {
 	Die2      int       `firestore:"die2" json:"die2"`
 	Total     int       `firestore:"total" json:"total"`
 	RolledBy  string    `firestore:"rolled_by" json:"rolledBy"`
+	Phase     GamePhase `firestore:"phase" json:"phase"`
 	Timestamp time.Time `firestore:"timestamp" json:"timestamp"`
 }
 

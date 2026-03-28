@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import type { RootState } from '../store/store';
+import type { RootState, AppDispatch } from '../store/store';
+import { setDiceTheme } from '../store/uiSlice';
+import type { DiceTheme } from '../store/uiSlice';
+import { DieFaceCSS } from '../components/game/DiceArea';
 import api from '../services/api';
 import { formatChips } from '../utils/format';
 
@@ -13,8 +16,21 @@ interface Stats {
   biggestLoss: number;
 }
 
+const THEMES: { id: DiceTheme; label: string; description: string }[] = [
+  { id: 'classic', label: 'Classic', description: 'Clean white' },
+  { id: 'neon', label: 'Neon', description: 'Purple glow' },
+  { id: 'casino', label: 'Casino', description: 'Red felt' },
+  { id: 'bone', label: 'Bone', description: 'Ivory warm' },
+  { id: 'obsidian', label: 'Obsidian', description: 'Gold on black' },
+];
+
 export default function StatsPage() {
-  const { userId, isAuthenticated } = { userId: useSelector((s: RootState) => s.auth.userId), isAuthenticated: !!useSelector((s: RootState) => s.auth.accessToken) };
+  const dispatch = useDispatch<AppDispatch>();
+  const { userId, isAuthenticated } = {
+    userId: useSelector((s: RootState) => s.auth.userId),
+    isAuthenticated: !!useSelector((s: RootState) => s.auth.accessToken),
+  };
+  const selectedTheme = useSelector((s: RootState) => s.ui.selectedDiceTheme);
   const navigate = useNavigate();
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -28,30 +44,63 @@ export default function StatsPage() {
       .finally(() => setLoading(false));
   }, [userId]);
 
-  if (loading) {
-    return (
-      <div className="max-w-2xl mx-auto px-4 py-16 text-center text-gray-400">
-        Loading stats...
-      </div>
-    );
-  }
-
   const netColor = !stats ? 'text-white' : stats.netChips >= 0 ? 'text-green-400' : 'text-red-400';
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-12">
-      <h1 className="text-3xl font-bold text-white mb-8">Your Stats</h1>
-      {stats ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <StatCard label="Games Played" value={String(stats.gamesPlayed)} />
-          <StatCard label="Dice Rolled" value={String(stats.diceRolled)} />
-          <StatCard label="Net Profit/Loss" value={formatChips(stats.netChips)} valueClass={netColor} />
-          <StatCard label="Biggest Win" value={formatChips(stats.biggestWin)} valueClass="text-green-400" />
-          <StatCard label="Biggest Loss" value={formatChips(Math.abs(stats.biggestLoss))} valueClass="text-red-400" />
+    <div className="max-w-2xl mx-auto px-4 py-12 space-y-10">
+      <div>
+        <h1 className="text-3xl font-bold text-white mb-6">Your Account</h1>
+
+        {/* Dice Theme Picker */}
+        <div className="bg-gray-900 border border-gray-700 rounded-xl p-5">
+          <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-4">Dice Style</h2>
+          <p className="text-xs text-gray-500 mb-4">Your dice look this way when you roll — on both screens.</p>
+          <div className="grid grid-cols-5 gap-3">
+            {THEMES.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => dispatch(setDiceTheme(t.id))}
+                className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-colors ${
+                  selectedTheme === t.id
+                    ? 'border-green-500 bg-green-900/20'
+                    : 'border-gray-700 bg-gray-800 hover:border-gray-500'
+                }`}
+              >
+                <DieFaceCSS value={5} theme={t.id} size={52} />
+                <div className="text-center">
+                  <div className={`text-xs font-semibold ${selectedTheme === t.id ? 'text-green-400' : 'text-gray-300'}`}>
+                    {t.label}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-0.5">{t.description}</div>
+                </div>
+              </button>
+            ))}
+          </div>
+          {selectedTheme && (
+            <p className="text-xs text-green-500 mt-3 text-center">
+              ✓ {THEMES.find(t => t.id === selectedTheme)?.label} selected — saved automatically
+            </p>
+          )}
         </div>
-      ) : (
-        <p className="text-gray-400">No stats yet — play a game!</p>
-      )}
+      </div>
+
+      {/* Stats */}
+      <div>
+        <h2 className="text-xl font-bold text-white mb-4">Stats</h2>
+        {loading ? (
+          <div className="text-gray-400 text-sm">Loading stats...</div>
+        ) : stats ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <StatCard label="Games Played" value={String(stats.gamesPlayed)} />
+            <StatCard label="Dice Rolled" value={String(stats.diceRolled)} />
+            <StatCard label="Net Profit/Loss" value={formatChips(stats.netChips)} valueClass={netColor} />
+            <StatCard label="Biggest Win" value={formatChips(stats.biggestWin)} valueClass="text-green-400" />
+            <StatCard label="Biggest Loss" value={formatChips(Math.abs(stats.biggestLoss))} valueClass="text-red-400" />
+          </div>
+        ) : (
+          <p className="text-gray-400">No stats yet — play a game!</p>
+        )}
+      </div>
     </div>
   );
 }

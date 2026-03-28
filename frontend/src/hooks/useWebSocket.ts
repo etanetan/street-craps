@@ -112,12 +112,42 @@ export function useWebSocket(gameId: string | null) {
         delayIfHeld(() => dispatch(phaseChanged(p)));
         break;
       }
-      case MSG.BET_PLACED:
-        dispatch(betPlaced(payload as BetPlacedPayload));
+      case MSG.BET_PLACED: {
+        const p = payload as BetPlacedPayload;
+        dispatch(betPlaced(p));
+        // If a rolled GAME_STATE is pending, merge this bet in so it doesn't
+        // get clobbered when the delayed dispatch fires
+        if (pendingGameState.current) {
+          const idx = pendingGameState.current.players.findIndex(pl => pl.id === p.playerId);
+          if (idx >= 0) {
+            pendingGameState.current = {
+              ...pendingGameState.current,
+              players: pendingGameState.current.players.map((pl, i) =>
+                i === idx ? { ...pl, bets: [...pl.bets, p.bet], chips: p.playerChips } : pl
+              ),
+            };
+          }
+        }
         break;
-      case MSG.BET_REMOVED:
-        dispatch(betRemoved(payload as BetRemovedPayload));
+      }
+      case MSG.BET_REMOVED: {
+        const p = payload as BetRemovedPayload;
+        dispatch(betRemoved(p));
+        if (pendingGameState.current) {
+          const idx = pendingGameState.current.players.findIndex(pl => pl.id === p.playerId);
+          if (idx >= 0) {
+            pendingGameState.current = {
+              ...pendingGameState.current,
+              players: pendingGameState.current.players.map((pl, i) =>
+                i === idx
+                  ? { ...pl, bets: pl.bets.filter(b => b.id !== p.betId), chips: p.playerChips }
+                  : pl
+              ),
+            };
+          }
+        }
         break;
+      }
       case MSG.PLAYER_CONNECTION:
         dispatch(playerConnectionChanged(payload as PlayerConnectionPayload));
         break;

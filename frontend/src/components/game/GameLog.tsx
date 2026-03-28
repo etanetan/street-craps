@@ -13,9 +13,11 @@ export default function GameLog() {
       <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">Roll History</h3>
       <div className="space-y-1.5">
         {recent.map((roll, i) => {
-          const isNatural = roll.total === 7 || roll.total === 11;
-          const isCraps = roll.total === 2 || roll.total === 3 || roll.total === 12;
-          const isPoint = game.point > 0 && game.point === roll.total;
+          const isComeOut = !roll.phase || roll.phase === 'COME_OUT';
+          const isNatural = isComeOut && (roll.total === 7 || roll.total === 11);
+          const isCraps = isComeOut && (roll.total === 2 || roll.total === 3 || roll.total === 12);
+          const isSevenOut = roll.phase === 'POINT_PHASE' && roll.total === 7;
+          const isPoint = game.point > 0 && game.point === roll.total && roll.phase === 'POINT_PHASE';
           return (
             <div
               key={i}
@@ -29,12 +31,13 @@ export default function GameLog() {
                 className={`font-bold text-sm tabular-nums ${
                   isNatural ? 'text-green-400' :
                   isCraps ? 'text-red-400' :
+                  isSevenOut ? 'text-orange-400' :
                   isPoint ? 'text-yellow-400' :
                   'text-white'
                 }`}
               >
                 = {roll.total}
-                {isNatural ? ' 🎉' : isCraps ? ' ✗' : isPoint ? ' ⭐' : ''}
+                {isNatural ? ' 🎉' : isCraps ? ' ✗' : isSevenOut ? ' 7-out' : isPoint ? ' ⭐' : ''}
               </span>
             </div>
           );

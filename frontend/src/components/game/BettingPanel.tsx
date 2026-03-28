@@ -110,16 +110,7 @@ export default function BettingPanel({ send, mobile = false }: Props) {
             {myBets.map((b) => (
               <div key={b.id} className="flex items-center justify-between text-sm bg-gray-800 rounded-lg px-3 py-2">
                 <span className="text-gray-200 font-medium">{betLabel(b.type, b.number)}</span>
-                <div className="flex items-center gap-3">
-                  <span className="text-green-400 font-mono font-bold">{formatChips(b.amount)}</span>
-                  <button
-                    onClick={() => send(MSG.REMOVE_BET, { gameId: game.id, betId: b.id })}
-                    className="text-gray-600 hover:text-red-400 text-xs transition-colors"
-                    title="Remove bet"
-                  >
-                    ✕
-                  </button>
-                </div>
+                <span className="text-green-400 font-mono font-bold">{formatChips(b.amount)}</span>
               </div>
             ))}
           </div>
@@ -159,7 +150,10 @@ export default function BettingPanel({ send, mobile = false }: Props) {
         <div>
           <div className="text-xs text-gray-500 mb-2">Core Bets</div>
           <div className="grid grid-cols-2 gap-2">
-            {COME_OUT_BETS.map((bet, i) => (
+            {COME_OUT_BETS.filter(bet =>
+              // Shooter must bet Pass Line (on themselves), never Don't Pass
+              !(isShooter && bet.type === 'DONT_PASS')
+            ).map((bet, i) => (
               <BetBtn key={i} bet={bet} onBet={handleBet} />
             ))}
           </div>
