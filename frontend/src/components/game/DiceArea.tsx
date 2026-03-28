@@ -89,8 +89,18 @@ export default function DiceArea() {
   const localAnimStyle = useSelector((s: RootState) => s.ui.selectedDiceAnimStyle);
   const rollLabel = useSelector((s: RootState) => s.game.pendingRollLabel);
   const game = useSelector((s: RootState) => s.game.game);
-  const [displayDie1, setDisplayDie1] = useState(0);
-  const [displayDie2, setDisplayDie2] = useState(0);
+  // Seed from last roll in history so dice show correct values on load/reconnect
+  const lastRoll = game?.rollHistory?.[game.rollHistory.length - 1];
+  const [displayDie1, setDisplayDie1] = useState(lastRoll?.die1 ?? 0);
+  const [displayDie2, setDisplayDie2] = useState(lastRoll?.die2 ?? 0);
+
+  // Keep display in sync if game loads/changes while no animation is playing
+  useEffect(() => {
+    if (animState !== 'shaking' && lastRoll) {
+      setDisplayDie1(lastRoll.die1);
+      setDisplayDie2(lastRoll.die2);
+    }
+  }, [lastRoll?.die1, lastRoll?.die2, animState]);
 
   // Use the shooter's dice preferences if available, otherwise local preference
   const shooter = game?.players.find(p => p.isShooter);
