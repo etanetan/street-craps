@@ -2,16 +2,16 @@ import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../store/store';
 import { MSG } from '../../types/websocket';
+import { DieFaceCSS } from './DiceArea';
 
 interface Props {
   send: (type: string, payload: unknown) => void;
 }
 
-const CLASSIC_FACES = ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
-
 export default function ShooterSelector({ send }: Props) {
   const game = useSelector((s: RootState) => s.game.game);
   const myPlayerId = useSelector((s: RootState) => s.game.myPlayerId);
+  const diceTheme = useSelector((s: RootState) => s.ui.selectedDiceTheme);
   const [rolled, setRolled] = useState(false);
 
   // Reset optimistic roll flag on every new round (handles tie-breakers)
@@ -61,7 +61,12 @@ export default function ShooterSelector({ send }: Props) {
                 {p.name}
                 {p.id === myPlayerId && <span className="text-gray-500 ml-1">(you)</span>}
               </div>
-              <div className="text-5xl md:text-7xl">{die ? CLASSIC_FACES[die] : '⬜'}</div>
+              <div className="flex items-center justify-center h-16 md:h-20">
+                {die
+                  ? <DieFaceCSS value={die} theme={diceTheme} size={56} />
+                  : <div className="w-14 h-14 rounded-xl border-2 border-dashed border-gray-600" />
+                }
+              </div>
               <div className={`text-sm font-bold ${die ? 'text-white' : 'text-gray-600'}`}>
                 {die ? `Rolled ${die}` : 'Waiting...'}
               </div>
