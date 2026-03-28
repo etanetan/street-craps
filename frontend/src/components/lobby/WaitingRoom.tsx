@@ -29,17 +29,17 @@ export default function WaitingRoom({ send }: Props) {
   };
 
   return (
-    <div className="flex flex-col items-center gap-6 py-8 fade-in-up">
+    <div className="flex flex-col items-center gap-6 py-8 fade-in-up w-full px-4">
       <div className="text-center">
         <div className="text-4xl font-mono font-bold text-green-400 tracking-widest mb-1">{game.code}</div>
         <div className="text-sm text-gray-400">Game Code</div>
       </div>
 
-      <div className="flex gap-2 items-center">
+      <div className="flex gap-2 items-center w-full max-w-md">
         <input
           readOnly
           value={shareUrl}
-          className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-300 w-64 focus:outline-none"
+          className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-300 w-full min-w-0 focus:outline-none"
         />
         <button
           onClick={handleCopy}

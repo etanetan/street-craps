@@ -84,7 +84,7 @@ export default function StatsPage() {
         <div className="bg-gray-900 border border-gray-700 rounded-xl p-5 mb-4">
           <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-1">Dice Style</h2>
           <p className="text-xs text-gray-500 mb-4">Your dice look this way when you roll — on both screens.</p>
-          <div className="grid grid-cols-5 gap-3">
+          <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
             {THEMES.map((t) => (
               <button
                 key={t.id}
@@ -111,7 +111,7 @@ export default function StatsPage() {
         <div className="bg-gray-900 border border-gray-700 rounded-xl p-5">
           <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-1">Dice Animation</h2>
           <p className="text-xs text-gray-500 mb-4">How your dice move when you roll. Click to preview.</p>
-          <div className="grid grid-cols-5 gap-3">
+          <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
             {ANIMS.map((a) => (
               <button
                 key={a.id}
