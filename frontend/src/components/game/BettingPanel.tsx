@@ -159,7 +159,6 @@ export default function BettingPanel({ send, mobile = false }: Props) {
             <div>
               <div className={`text-xs mb-2 ${isPointPhase ? 'text-gray-500' : 'text-gray-700'}`}>
                 Place a Number (wins on hit, loses on 7)
-                {isComeOut && <span className="ml-1 text-gray-700">— available after point is set</span>}
               </div>
               <div className="grid grid-cols-3 gap-2">
                 {PLACE_NUMBERS.map((n) => {
