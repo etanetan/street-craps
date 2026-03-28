@@ -43,6 +43,7 @@ export default function BettingPanel({ send }: Props) {
   const game = useSelector((s: RootState) => s.game.game);
   const myPlayerId = useSelector((s: RootState) => s.game.myPlayerId);
   const [amount, setAmount] = useState('10');
+  const [justPlaced, setJustPlaced] = useState<string | null>(null);
 
   if (!game) return null;
 
@@ -71,6 +72,8 @@ export default function BettingPanel({ send }: Props) {
       amount: amountCents,
       number: bet.number ?? 0,
     });
+    setJustPlaced(`${bet.label} ${formatChips(amountCents)}`);
+    setTimeout(() => setJustPlaced(null), 2000);
   };
 
   const handleRoll = () => {
@@ -81,6 +84,13 @@ export default function BettingPanel({ send }: Props) {
 
   return (
     <div className="space-y-4">
+      {/* Bet placed confirmation */}
+      {justPlaced && (
+        <div className="bg-green-800/80 border border-green-600 text-green-200 text-sm font-medium px-4 py-2 rounded-lg text-center fade-in-up">
+          ✓ Bet placed: {justPlaced}
+        </div>
+      )}
+
       {/* My active bets */}
       {myBets.length > 0 && (
         <div className="bg-gray-900 border border-gray-700 rounded-xl p-4">
