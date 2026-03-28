@@ -8,9 +8,12 @@ import { centsFromDollars } from '../../utils/format';
 
 interface Props {
   initialCode?: string;
+  mobile?: boolean;
 }
 
-export default function JoinGame({ initialCode = '' }: Props) {
+const BUY_IN_PRESETS = [25, 50, 100, 200, 500];
+
+export default function JoinGame({ initialCode = '', mobile = false }: Props) {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const theme = useSelector((s: RootState) => s.ui.selectedDiceTheme);
@@ -31,7 +34,6 @@ export default function JoinGame({ initialCode = '' }: Props) {
 
     setLoading(true);
     try {
-      // First get the game by code to find the gameId
       const gameRes = await api.get(`/api/games/${code.trim()}`);
       const game = gameRes.data;
 
@@ -59,6 +61,77 @@ export default function JoinGame({ initialCode = '' }: Props) {
       setLoading(false);
     }
   };
+
+  if (mobile) {
+    return (
+      <form onSubmit={handleJoin} className="flex flex-col gap-5">
+        {error && (
+          <div className="bg-red-900/50 border border-red-700 text-red-300 text-sm p-3 rounded-xl">
+            {error}
+          </div>
+        )}
+        <div>
+          <label className="block text-sm font-medium text-gray-400 mb-2">Game Code</label>
+          <input
+            type="text"
+            value={code}
+            onChange={(e) => setCode(e.target.value.toUpperCase())}
+            placeholder="XXXXXX"
+            maxLength={6}
+            className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-4 text-white font-mono text-2xl text-center tracking-[0.3em] focus:outline-none focus:border-green-500"
+            required autoFocus
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-400 mb-2">Your Name</label>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Enter your name"
+            className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-4 text-white text-base focus:outline-none focus:border-green-500"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-400 mb-2">Buy-In</label>
+          <div className="flex gap-2 mb-3">
+            {BUY_IN_PRESETS.map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setBuyIn(String(v))}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-colors ${
+                  buyIn === String(v)
+                    ? 'bg-green-600 border-green-500 text-white'
+                    : 'bg-gray-900 border-gray-700 text-gray-400 hover:border-gray-500'
+                }`}
+              >
+                ${v}
+              </button>
+            ))}
+          </div>
+          <input
+            type="number"
+            value={buyIn}
+            onChange={(e) => setBuyIn(e.target.value)}
+            min="1"
+            step="1"
+            placeholder="Custom amount"
+            className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-4 text-white text-base focus:outline-none focus:border-green-500"
+            required
+          />
+        </div>
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-bold py-5 rounded-xl transition-colors text-xl mt-2"
+        >
+          {loading ? 'Joining...' : 'Join Game'}
+        </button>
+      </form>
+    );
+  }
 
   return (
     <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 w-full max-w-sm mx-auto">
