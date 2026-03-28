@@ -8,16 +8,14 @@ export default function Home() {
   return (
     <div className="max-w-5xl mx-auto px-4">
       {/* ── DESKTOP ── */}
-      <div className="hidden md:block py-12">
-        <div className="text-center mb-12">
+      <div className="hidden md:block py-16">
+        <div className="text-center mb-14">
           <h1 className="text-5xl font-bold text-white mb-3">Street Craps</h1>
-          <p className="text-lg text-gray-400">Create a game, share the link, play with a friend</p>
+          <p className="text-lg text-gray-500">Create a game, share the link, play with a friend</p>
         </div>
-        <div className="flex flex-row gap-6 justify-center items-start">
+        <div className="flex flex-row gap-8 justify-center items-start">
           <CreateGame />
-          <div className="flex items-center self-center">
-            <div className="text-gray-600 font-medium">or</div>
-          </div>
+          <div className="self-center text-gray-700 font-semibold text-sm uppercase tracking-widest">or</div>
           <JoinGame />
         </div>
       </div>
