@@ -7,6 +7,7 @@ import { formatChips, betLabel, payoutLabel, centsFromDollars } from '../../util
 
 interface Props {
   send: (type: string, payload: unknown) => void;
+  mobile?: boolean;
 }
 
 interface BetButton {
@@ -39,11 +40,12 @@ const POINT_PHASE_BETS: BetButton[] = [
   { type: 'HARDWAY', label: 'Hard 10', payout: '7:1', number: 10 },
 ];
 
-export default function BettingPanel({ send }: Props) {
+export default function BettingPanel({ send, mobile = false }: Props) {
   const game = useSelector((s: RootState) => s.game.game);
   const myPlayerId = useSelector((s: RootState) => s.game.myPlayerId);
   const [amount, setAmount] = useState('10');
   const [justPlaced, setJustPlaced] = useState<string | null>(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   if (!game) return null;
 
@@ -159,27 +161,39 @@ export default function BettingPanel({ send }: Props) {
           </div>
         </div>
 
-        {/* Odds bets (point phase) */}
-        {passOddsBets.length > 0 && (
+        {/* Advanced bets: odds, place, hardway */}
+        {(passOddsBets.length > 0 || isPointPhase) && (
           <div className="mt-3">
-            <div className="text-xs text-gray-500 mb-2">Odds (True Odds — No House Edge)</div>
-            <div className="grid grid-cols-2 gap-2">
-              {passOddsBets.map((bet, i) => (
-                <BetBtn key={i} bet={bet} onBet={handleBet} />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Place & Hardway bets (point phase) */}
-        {isPointPhase && (
-          <div className="mt-3">
-            <div className="text-xs text-gray-500 mb-2">Place & Hardways</div>
-            <div className="grid grid-cols-3 gap-2">
-              {POINT_PHASE_BETS.map((bet, i) => (
-                <BetBtn key={i} bet={bet} onBet={handleBet} small />
-              ))}
-            </div>
+            <button
+              onClick={() => setShowAdvanced(v => !v)}
+              className="w-full text-xs text-gray-500 hover:text-gray-300 flex items-center justify-center gap-1 py-1 transition-colors"
+            >
+              {showAdvanced ? '▲ Hide advanced bets' : '▼ Show odds / place / hardway bets'}
+            </button>
+            {showAdvanced && (
+              <div className="mt-2 space-y-2">
+                {passOddsBets.length > 0 && (
+                  <div>
+                    <div className="text-xs text-gray-500 mb-1">Odds (No House Edge)</div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {passOddsBets.map((bet, i) => (
+                        <BetBtn key={i} bet={bet} onBet={handleBet} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {isPointPhase && (
+                  <div>
+                    <div className="text-xs text-gray-500 mb-1">Place & Hardways</div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {POINT_PHASE_BETS.map((bet, i) => (
+                        <BetBtn key={i} bet={bet} onBet={handleBet} small />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -188,7 +202,7 @@ export default function BettingPanel({ send }: Props) {
       {isShooter && (
         <button
           onClick={handleRoll}
-          className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-5 rounded-xl text-2xl transition-colors pulse-glow"
+          className={`w-full bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl transition-colors pulse-glow ${mobile ? 'py-4 text-xl' : 'py-5 text-2xl'}`}
         >
           🎲 Roll Dice
         </button>

@@ -73,6 +73,13 @@ export function useWebSocket(gameId: string | null) {
     };
   }, [gameId, playerToken]);
 
+  const delayIfHeld = (fn: () => void) => {
+    const now = Date.now();
+    const delay = holdGameStateUntil.current - now;
+    if (delay > 0) setTimeout(fn, delay);
+    else fn();
+  };
+
   const handleMessage = (type: string, payload: unknown) => {
     switch (type) {
       case MSG.GAME_STATE: {
@@ -95,12 +102,16 @@ export function useWebSocket(gameId: string | null) {
         // Hold GAME_STATE until dice animation completes (~950ms)
         holdGameStateUntil.current = Date.now() + 950;
         break;
-      case MSG.BETS_RESOLVED:
-        dispatch(betResultsQueued(payload as BetsResolvedPayload));
+      case MSG.BETS_RESOLVED: {
+        const p = payload as BetsResolvedPayload;
+        delayIfHeld(() => dispatch(betResultsQueued(p)));
         break;
-      case MSG.PHASE_CHANGED:
-        dispatch(phaseChanged(payload as PhaseChangedPayload));
+      }
+      case MSG.PHASE_CHANGED: {
+        const p = payload as PhaseChangedPayload;
+        delayIfHeld(() => dispatch(phaseChanged(p)));
         break;
+      }
       case MSG.BET_PLACED:
         dispatch(betPlaced(payload as BetPlacedPayload));
         break;

@@ -73,6 +73,7 @@ export default function DiceArea() {
   const pendingRoll = useSelector((s: RootState) => s.game.pendingRoll);
   const animState = useSelector((s: RootState) => s.game.diceAnimation);
   const diceTheme = useSelector((s: RootState) => s.ui.selectedDiceTheme);
+  const rollLabel = useSelector((s: RootState) => s.game.pendingRollLabel);
   const [displayDie1, setDisplayDie1] = useState(0);
   const [displayDie2, setDisplayDie2] = useState(0);
 
@@ -99,15 +100,10 @@ export default function DiceArea() {
       {total > 0 && animState !== 'shaking' && (
         <div className="fade-in-up text-center">
           <div className="text-3xl font-bold text-white">{total}</div>
-          <div className="text-sm text-gray-400 mt-0.5">{getRollLabel(total)}</div>
+          {rollLabel && <div className="text-sm text-gray-300 mt-0.5">{rollLabel}</div>}
         </div>
       )}
     </div>
   );
 }
 
-function getRollLabel(total: number): string {
-  if (total === 7 || total === 11) return 'Natural! 🎉';
-  if (total === 2 || total === 3 || total === 12) return 'Craps!';
-  return '';
-}

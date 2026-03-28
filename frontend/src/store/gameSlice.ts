@@ -29,6 +29,7 @@ interface GameState {
   lastError: string | null;
   wsConnected: boolean;
   rollOutcome: RollOutcome | null;
+  pendingRollLabel: string;
 }
 
 const initialState: GameState = {
@@ -41,6 +42,7 @@ const initialState: GameState = {
   lastError: null,
   wsConnected: false,
   rollOutcome: null,
+  pendingRollLabel: '',
 };
 
 const gameSlice = createSlice({
@@ -71,12 +73,21 @@ const gameSlice = createSlice({
     diceRolled(state, action: PayloadAction<DiceRolledPayload>) {
       state.pendingRoll = action.payload;
       state.diceAnimation = 'shaking';
+      // Pre-compute label now, before phase transitions arrive
+      const total = action.payload.die1 + action.payload.die2;
+      if (state.game?.phase === 'POINT_PHASE') {
+        if (total === state.game.point) state.pendingRollLabel = 'Point hit!';
+        else if (total === 7) state.pendingRollLabel = 'Seven out!';
+        else state.pendingRollLabel = '';
+      } else {
+        if (total === 7 || total === 11) state.pendingRollLabel = 'Natural! 🎉';
+        else if (total === 2 || total === 3 || total === 12) state.pendingRollLabel = 'Craps!';
+        else state.pendingRollLabel = '';
+      }
     },
     diceAnimationComplete(state) {
       state.diceAnimation = 'done';
-      // Apply pending bet results to game state
       if (state.game && state.pendingBetResults.length > 0) {
-        // Results already applied server-side; game state will come via GAME_STATE broadcast
         state.pendingBetResults = [];
       }
     },
