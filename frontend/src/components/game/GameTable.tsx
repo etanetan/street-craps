@@ -189,9 +189,9 @@ export default function GameTable({ send }: Props) {
           </div>
 
           {/* ── MOBILE layout (< lg) ── */}
-          <div className="lg:hidden flex flex-col min-h-screen">
+          <div className="lg:hidden flex flex-col overflow-hidden" style={{ height: '100dvh' }}>
             {/* Top bar: phase + players */}
-            <div className="flex items-center justify-between px-4 pt-2 pb-1 gap-3">
+            <div className="flex-none flex items-center justify-between px-4 py-2 gap-3">
               <div className={`px-3 py-1 rounded-full text-xs font-medium shrink-0 ${
                 game.phase === 'COME_OUT' ? 'bg-blue-900/50 text-blue-300 border border-blue-700'
                 : 'bg-yellow-900/50 text-yellow-300 border border-yellow-700'
@@ -212,32 +212,31 @@ export default function GameTable({ send }: Props) {
               </div>
             </div>
 
-            {/* Dice area */}
-            <div className="flex flex-col items-center">
-              <PointMarker point={game.point} mobile />
-              <DiceArea mobile />
+            {/* Compact horizontal dice row */}
+            <div className="flex-none">
+              <DiceArea mobile point={game.point} />
             </div>
 
-            {/* Scrollable middle: active bets + betting buttons */}
-            <div className="flex-1 overflow-y-auto px-4 pb-2 space-y-3">
+            {/* Betting panel — fills remaining space, no scroll */}
+            <div className="flex-1 min-h-0 px-4">
               <BettingPanel send={send} mobile />
             </div>
 
             {/* Bottom bar: roll history + end game */}
-            <div className="px-4 pb-2 pt-1 border-t border-gray-800 flex items-center gap-2">
+            <div className="flex-none px-4 pb-3 pt-1 border-t border-gray-800 flex items-center gap-2">
               <button
                 onClick={() => setShowHistory(true)}
-                className="flex-1 text-xs text-gray-500 hover:text-gray-300 py-1.5 transition-colors"
+                className="flex-1 text-xs text-gray-500 hover:text-gray-300 py-1 transition-colors"
               >
                 Roll History {game.rollHistory?.length ? `(${game.rollHistory.length})` : ''}
               </button>
               <div className="w-px h-4 bg-gray-700" />
               {iHaveVoted ? (
-                <button onClick={cancelEndGame} className="text-xs text-yellow-500 hover:text-yellow-300 py-1.5 transition-colors">
+                <button onClick={cancelEndGame} className="text-xs text-yellow-500 hover:text-yellow-300 py-1 transition-colors">
                   Cancel end request
                 </button>
               ) : (
-                <button onClick={requestEndGame} className="text-xs text-gray-600 hover:text-red-400 py-1.5 transition-colors">
+                <button onClick={requestEndGame} className="text-xs text-gray-600 hover:text-red-400 py-1 transition-colors">
                   End Game
                 </button>
               )}
