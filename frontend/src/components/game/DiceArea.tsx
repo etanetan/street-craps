@@ -129,12 +129,14 @@ export default function DiceArea() {
         <DieFaceCSS value={displayDie2} theme={diceTheme} animClass={animClass} size={112} />
       </div>
 
-      {total > 0 && animState !== 'shaking' && (
-        <div className="fade-in-up text-center">
-          <div className="text-3xl font-bold text-white">{total}</div>
-          {rollLabel && <div className="text-sm text-gray-300 mt-0.5">{rollLabel}</div>}
-        </div>
-      )}
+      <div className="text-center" style={{ minHeight: '2.75rem' }}>
+        {total > 0 && animState !== 'shaking' && (
+          <div className="fade-in-up">
+            <div className="text-3xl font-bold text-white">{total}</div>
+            {rollLabel && <div className="text-sm text-gray-300 mt-0.5">{rollLabel}</div>}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
