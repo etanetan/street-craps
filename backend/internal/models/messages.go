@@ -17,6 +17,8 @@ const (
 	MsgTopUp             = "TOP_UP"
 	MsgEndGame           = "END_GAME"
 	MsgCancelEndGame     = "CANCEL_END_GAME"
+	MsgApproveBet        = "APPROVE_BET"
+	MsgRejectBet         = "REJECT_BET"
 	MsgPing              = "PING"
 )
 
@@ -114,6 +116,16 @@ type BetRemovedPayload struct {
 	BetID       string `json:"betId"`
 	PlayerID    string `json:"playerId"`
 	PlayerChips int64  `json:"playerChips"`
+}
+
+type ApproveBetPayload struct {
+	GameID    string `json:"gameId"`
+	RequestID string `json:"requestId"`
+}
+
+type RejectBetPayload struct {
+	GameID    string `json:"gameId"`
+	RequestID string `json:"requestId"`
 }
 
 type TopUpPayload struct {

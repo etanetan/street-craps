@@ -183,21 +183,30 @@ func AutoMatchBets(g *models.Game, shooterBet *models.Bet) []models.Bet {
 			}
 		}
 		{
-			matchAmt := shooterBet.Amount
-			if p.Chips < matchAmt {
-				matchAmt = p.Chips
+			if p.Chips <= 0 {
+				goto nextPlayer
 			}
-			if matchAmt <= 0 {
+			if p.Chips < shooterBet.Amount {
+				// Fader can't fully cover: request approval instead of partial auto-match
+				g.PendingBetRequests = append(g.PendingBetRequests, models.PendingBetRequest{
+					ID:              uuid.New().String(),
+					ShooterBetID:    shooterBet.ID,
+					ShooterPlayerID: shooterBet.PlayerID,
+					BetType:         models.BetPassLine,
+					Amount:          shooterBet.Amount,
+					FaderPlayerID:   p.ID,
+					FaderCanCover:   p.Chips,
+				})
 				goto nextPlayer
 			}
 			bet := models.Bet{
 				ID:       uuid.New().String(),
 				PlayerID: p.ID,
 				Type:     models.BetDontPass,
-				Amount:   matchAmt,
+				Amount:   shooterBet.Amount,
 				Active:   true,
 			}
-			p.Chips -= matchAmt
+			p.Chips -= shooterBet.Amount
 			p.Bets = append(p.Bets, bet)
 			placed = append(placed, bet)
 		}
@@ -236,26 +245,112 @@ func AutoMatchPlaceBet(g *models.Game, shooterBet *models.Bet) []models.Bet {
 		if alreadyHas {
 			continue
 		}
-		amt := layAmount
-		if p.Chips < amt {
-			amt = p.Chips
+		if p.Chips <= 0 {
+			continue
 		}
-		if amt <= 0 {
+		if p.Chips < layAmount {
+			// Fader can't fully cover: request approval instead of partial auto-match
+			g.PendingBetRequests = append(g.PendingBetRequests, models.PendingBetRequest{
+				ID:              uuid.New().String(),
+				ShooterBetID:    shooterBet.ID,
+				ShooterPlayerID: shooterBet.PlayerID,
+				BetType:         models.BetPlace,
+				Amount:          shooterBet.Amount,
+				Number:          shooterBet.Number,
+				FaderPlayerID:   p.ID,
+				FaderCanCover:   p.Chips,
+			})
 			continue
 		}
 		bet := models.Bet{
 			ID:       uuid.New().String(),
 			PlayerID: p.ID,
 			Type:     models.BetLayPlace,
-			Amount:   amt,
+			Amount:   layAmount,
 			Number:   shooterBet.Number,
 			Active:   true,
 		}
-		p.Chips -= amt
+		p.Chips -= layAmount
 		p.Bets = append(p.Bets, bet)
 		placed = append(placed, bet)
 	}
 	return placed
+}
+
+// ApproveBetRequest accepts a pending bet request: creates the fader's counter-bet
+// for whatever chips they have available (up to faderCanCover) and removes the request.
+func ApproveBetRequest(g *models.Game, faderPlayerID, requestID string) (*models.Bet, error) {
+	reqIdx := -1
+	for i, r := range g.PendingBetRequests {
+		if r.ID == requestID && r.FaderPlayerID == faderPlayerID {
+			reqIdx = i
+			break
+		}
+	}
+	if reqIdx < 0 {
+		return nil, errors.New("bet request not found")
+	}
+	req := g.PendingBetRequests[reqIdx]
+	g.PendingBetRequests = append(g.PendingBetRequests[:reqIdx], g.PendingBetRequests[reqIdx+1:]...)
+
+	fidx := playerIndex(g, faderPlayerID)
+	if fidx < 0 {
+		return nil, errors.New("fader not found")
+	}
+	amt := req.FaderCanCover
+	if g.Players[fidx].Chips < amt {
+		amt = g.Players[fidx].Chips
+	}
+	if amt <= 0 {
+		return nil, errors.New("fader has no chips to cover")
+	}
+
+	faderBetType := models.BetDontPass
+	if req.BetType == models.BetPlace {
+		faderBetType = models.BetLayPlace
+	}
+
+	bet := models.Bet{
+		ID:       uuid.New().String(),
+		PlayerID: faderPlayerID,
+		Type:     faderBetType,
+		Amount:   amt,
+		Number:   req.Number,
+		Active:   true,
+	}
+	g.Players[fidx].Chips -= amt
+	g.Players[fidx].Bets = append(g.Players[fidx].Bets, bet)
+	return &bet, nil
+}
+
+// RejectBetRequest denies a pending bet request: removes the shooter's original bet,
+// refunds their chips, and removes the request.
+func RejectBetRequest(g *models.Game, faderPlayerID, requestID string) (shooterPlayerID string, shooterBetID string, refund int64, err error) {
+	reqIdx := -1
+	for i, r := range g.PendingBetRequests {
+		if r.ID == requestID && r.FaderPlayerID == faderPlayerID {
+			reqIdx = i
+			break
+		}
+	}
+	if reqIdx < 0 {
+		return "", "", 0, errors.New("bet request not found")
+	}
+	req := g.PendingBetRequests[reqIdx]
+	g.PendingBetRequests = append(g.PendingBetRequests[:reqIdx], g.PendingBetRequests[reqIdx+1:]...)
+
+	sidx := playerIndex(g, req.ShooterPlayerID)
+	if sidx < 0 {
+		return req.ShooterPlayerID, req.ShooterBetID, 0, errors.New("shooter not found")
+	}
+	for i, b := range g.Players[sidx].Bets {
+		if b.ID == req.ShooterBetID {
+			g.Players[sidx].Chips += b.Amount
+			g.Players[sidx].Bets = append(g.Players[sidx].Bets[:i], g.Players[sidx].Bets[i+1:]...)
+			return req.ShooterPlayerID, req.ShooterBetID, b.Amount, nil
+		}
+	}
+	return req.ShooterPlayerID, req.ShooterBetID, 0, errors.New("shooter's bet not found")
 }
 
 // RemoveBet removes a bet before the roll.
@@ -284,6 +379,9 @@ func RollDice(g *models.Game, callerID string) (*RollResult, error) {
 	}
 	if g.Phase != models.PhaseComeOut && g.Phase != models.PhasePoint {
 		return nil, errors.New("cannot roll in current phase")
+	}
+	if len(g.PendingBetRequests) > 0 {
+		return nil, errors.New("waiting for bet approval before rolling")
 	}
 
 	die1, die2 := rollDie(), rollDie()

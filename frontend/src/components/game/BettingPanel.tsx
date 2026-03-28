@@ -28,6 +28,7 @@ export default function BettingPanel({ send, mobile = false }: Props) {
 
   const me = game.players.find((p) => p.id === myPlayerId);
   const opponent = game.players.find((p) => p.id !== myPlayerId);
+  const pendingApproval = (game.pendingBetRequests ?? []).length > 0;
   const isShooter = game.shooterId === myPlayerId;
   const isComeOut = game.phase === 'COME_OUT';
   const isPointPhase = game.phase === 'POINT_PHASE';
@@ -199,12 +200,18 @@ export default function BettingPanel({ send, mobile = false }: Props) {
       {/* Roll button */}
       {isShooter && (
         <div className={mobile ? 'pb-1' : ''}>
-          <button
-            onClick={handleRoll}
-            className={`w-full text-white font-bold rounded-xl bg-green-600 hover:bg-green-500 pulse-glow transition-colors ${mobile ? 'py-3 text-lg' : 'py-5 text-2xl'}`}
-          >
-            🎲 Roll Dice
-          </button>
+          {pendingApproval ? (
+            <div className={`w-full rounded-xl bg-yellow-900/40 border border-yellow-700/50 text-yellow-400 font-medium text-center ${mobile ? 'py-3 text-sm' : 'py-4 text-base'}`}>
+              ⏳ Waiting for {opponent?.name ?? 'opponent'} to approve your bet...
+            </div>
+          ) : (
+            <button
+              onClick={handleRoll}
+              className={`w-full text-white font-bold rounded-xl bg-green-600 hover:bg-green-500 pulse-glow transition-colors ${mobile ? 'py-3 text-lg' : 'py-5 text-2xl'}`}
+            >
+              🎲 Roll Dice
+            </button>
+          )}
         </div>
       )}
 

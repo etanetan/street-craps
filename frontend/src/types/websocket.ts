@@ -93,6 +93,8 @@ export const MSG = {
   TOP_UP: 'TOP_UP',
   END_GAME: 'END_GAME',
   CANCEL_END_GAME: 'CANCEL_END_GAME',
+  APPROVE_BET: 'APPROVE_BET',
+  REJECT_BET: 'REJECT_BET',
   PING: 'PING',
   // Server → Client
   GAME_STATE: 'GAME_STATE',

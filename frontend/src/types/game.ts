@@ -63,6 +63,7 @@ export interface Game {
   shooterDetermination: ShooterRoll[];
   determineRound: number;
   endGameVotes: string[]; // player IDs who voted to end
+  pendingBetRequests?: PendingBetRequest[];
   createdAt: string;
   updatedAt: string;
 }
@@ -73,4 +74,15 @@ export interface BetResult {
   outcome: BetOutcome;
   amount: number;
   netChips: number;
+}
+
+export interface PendingBetRequest {
+  id: string;
+  shooterBetId: string;
+  shooterPlayerId: string;
+  betType: BetType;
+  amount: number; // cents — shooter's requested amount
+  number: number; // for Place bets
+  faderPlayerId: string;
+  faderCanCover: number; // fader's current chips
 }

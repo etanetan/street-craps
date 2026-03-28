@@ -125,6 +125,12 @@ func (h *WSHandler) OnMessage(c *hub.Client, raw []byte) {
 	case models.MsgPlaceBet:
 		h.handlePlaceBet(ctx, c, msg.Payload)
 
+	case models.MsgApproveBet:
+		h.handleApproveBet(ctx, c, msg.Payload)
+
+	case models.MsgRejectBet:
+		h.handleRejectBet(ctx, c, msg.Payload)
+
 	case models.MsgRemoveBet:
 		h.handleRemoveBet(ctx, c, msg.Payload)
 
@@ -268,6 +274,68 @@ func (h *WSHandler) handlePlaceBet(ctx context.Context, c *hub.Client, raw json.
 
 	// Broadcast full state after all bets are recorded so clients stay in sync
 	// even if a BET_PLACED message was missed.
+	h.saveAndBroadcast(ctx, g)
+}
+
+func (h *WSHandler) handleApproveBet(ctx context.Context, c *hub.Client, raw json.RawMessage) {
+	var p models.ApproveBetPayload
+	if err := json.Unmarshal(raw, &p); err != nil {
+		c.Send(models.MsgError, models.ErrorPayload{Code: "parse_error", Message: "Bad payload"})
+		return
+	}
+	g, ok := h.getGame(ctx, p.GameID)
+	if !ok {
+		c.Send(models.MsgError, models.ErrorPayload{Code: "not_found", Message: "Game not found"})
+		return
+	}
+	faderBet, err := game.ApproveBetRequest(g, c.PlayerID, p.RequestID)
+	if err != nil {
+		c.Send(models.MsgError, models.ErrorPayload{Code: "approve_error", Message: err.Error()})
+		return
+	}
+	faderChips := int64(0)
+	for _, pl := range g.Players {
+		if pl.ID == c.PlayerID {
+			faderChips = pl.Chips
+			break
+		}
+	}
+	h.hub.Broadcast(g.ID, models.MsgBetPlaced, models.BetPlacedPayload{
+		Bet:         *faderBet,
+		PlayerID:    c.PlayerID,
+		PlayerChips: faderChips,
+	})
+	h.saveAndBroadcast(ctx, g)
+}
+
+func (h *WSHandler) handleRejectBet(ctx context.Context, c *hub.Client, raw json.RawMessage) {
+	var p models.RejectBetPayload
+	if err := json.Unmarshal(raw, &p); err != nil {
+		c.Send(models.MsgError, models.ErrorPayload{Code: "parse_error", Message: "Bad payload"})
+		return
+	}
+	g, ok := h.getGame(ctx, p.GameID)
+	if !ok {
+		c.Send(models.MsgError, models.ErrorPayload{Code: "not_found", Message: "Game not found"})
+		return
+	}
+	shooterPlayerID, shooterBetID, _, err := game.RejectBetRequest(g, c.PlayerID, p.RequestID)
+	if err != nil {
+		c.Send(models.MsgError, models.ErrorPayload{Code: "reject_error", Message: err.Error()})
+		return
+	}
+	shooterChips := int64(0)
+	for _, pl := range g.Players {
+		if pl.ID == shooterPlayerID {
+			shooterChips = pl.Chips
+			break
+		}
+	}
+	h.hub.Broadcast(g.ID, models.MsgBetRemoved, models.BetRemovedPayload{
+		BetID:       shooterBetID,
+		PlayerID:    shooterPlayerID,
+		PlayerChips: shooterChips,
+	})
 	h.saveAndBroadcast(ctx, g)
 }
 
