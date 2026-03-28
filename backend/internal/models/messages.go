@@ -16,6 +16,7 @@ const (
 	MsgStartGame         = "START_GAME"
 	MsgTopUp             = "TOP_UP"
 	MsgEndGame           = "END_GAME"
+	MsgCancelEndGame     = "CANCEL_END_GAME"
 	MsgPing              = "PING"
 )
 
@@ -121,6 +122,10 @@ type TopUpPayload struct {
 }
 
 type EndGamePayload struct {
+	GameID string `json:"gameId"`
+}
+
+type CancelEndGamePayload struct {
 	GameID string `json:"gameId"`
 }
 

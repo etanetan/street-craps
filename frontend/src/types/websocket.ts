@@ -92,6 +92,7 @@ export const MSG = {
   START_GAME: 'START_GAME',
   TOP_UP: 'TOP_UP',
   END_GAME: 'END_GAME',
+  CANCEL_END_GAME: 'CANCEL_END_GAME',
   PING: 'PING',
   // Server → Client
   GAME_STATE: 'GAME_STATE',

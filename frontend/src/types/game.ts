@@ -8,13 +8,8 @@ export type GamePhase =
 export type BetType =
   | 'PASS_LINE'
   | 'DONT_PASS'
-  | 'PASS_ODDS'
-  | 'DONT_ODDS'
   | 'PLACE'
-  | 'HARDWAY'
-  | 'ANY_CRAPS'
-  | 'ANY_SEVEN'
-  | 'HIGH_LOW';
+  | 'LAY_PLACE';
 
 export type BetOutcome = 'WIN' | 'LOSE' | 'PUSH';
 
@@ -67,6 +62,7 @@ export interface Game {
   rollHistory: DiceRoll[];
   shooterDetermination: ShooterRoll[];
   determineRound: number;
+  endGameVotes: string[]; // player IDs who voted to end
   createdAt: string;
   updatedAt: string;
 }

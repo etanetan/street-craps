@@ -15,15 +15,10 @@ const (
 type BetType string
 
 const (
-	BetPassLine BetType = "PASS_LINE"
-	BetDontPass BetType = "DONT_PASS"
-	BetPassOdds BetType = "PASS_ODDS"
-	BetDontOdds BetType = "DONT_ODDS"
-	BetPlace    BetType = "PLACE"
-	BetHardway  BetType = "HARDWAY"
-	BetAnyCraps BetType = "ANY_CRAPS"
-	BetAnySeven BetType = "ANY_SEVEN"
-	BetHighLow  BetType = "HIGH_LOW"
+	BetPassLine  BetType = "PASS_LINE"
+	BetDontPass  BetType = "DONT_PASS"
+	BetPlace     BetType = "PLACE"
+	BetLayPlace  BetType = "LAY_PLACE" // auto-matched lay for non-shooter opposing a Place bet
 )
 
 type BetOutcome string
@@ -84,6 +79,7 @@ type Game struct {
 	RollHistory          []DiceRoll    `firestore:"roll_history" json:"rollHistory"`
 	ShooterDetermination []ShooterRoll `firestore:"shooter_determination" json:"shooterDetermination"`
 	DetermineRound       int           `firestore:"determine_round" json:"determineRound"`
+	EndGameVotes         []string      `firestore:"end_game_votes" json:"endGameVotes"` // player IDs who voted to end
 	CreatedAt            time.Time     `firestore:"created_at" json:"createdAt"`
 	UpdatedAt            time.Time     `firestore:"updated_at" json:"updatedAt"`
 }

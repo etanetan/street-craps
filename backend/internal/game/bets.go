@@ -5,7 +5,7 @@ import (
 )
 
 // ResolveComeOut resolves all active bets after a come-out roll.
-// Returns a slice of BetResult for every active bet.
+// Place/LayPlace bets are active even during come-out (they persist from point phase).
 func ResolveComeOut(bets []models.Bet, die1, die2 int) []models.BetResult {
 	total := die1 + die2
 	result := EvalComeOut(total)
@@ -48,35 +48,32 @@ func ResolveComeOut(bets []models.Bet, die1, die2 int) []models.BetResult {
 			default:
 				continue // point set, bet stays
 			}
-		case models.BetAnyCraps:
-			if total == 2 || total == 3 || total == 12 {
-				res.Outcome = models.BetWin
-				res.NetChips = b.Amount * 7
-			} else {
+
+		// Place/LayPlace bets persist through come-out — only 7 or the number resolves them.
+		case models.BetPlace:
+			if total == 7 {
 				res.Outcome = models.BetLose
 				res.NetChips = -b.Amount
+			} else if total == b.Number {
+				num, den := PlacePayout(b.Number)
+				res.Outcome = models.BetWin
+				res.NetChips = b.Amount * num / den
+			} else {
+				continue
 			}
-		case models.BetAnySeven:
+		case models.BetLayPlace:
 			if total == 7 {
 				res.Outcome = models.BetWin
-				res.NetChips = b.Amount * 4
-			} else {
+				res.NetChips = LayPlaceWin(b.Amount, b.Number)
+			} else if total == b.Number {
 				res.Outcome = models.BetLose
 				res.NetChips = -b.Amount
-			}
-		case models.BetHighLow:
-			if total == 7 {
-				res.Outcome = models.BetPush
-				res.NetChips = 0
-			} else if (b.Number == 1 && IsHigh(total)) || (b.Number == 0 && IsLow(total)) {
-				res.Outcome = models.BetWin
-				res.NetChips = b.Amount
 			} else {
-				res.Outcome = models.BetLose
-				res.NetChips = -b.Amount
+				continue
 			}
+
 		default:
-			continue // other bets not active on come-out
+			continue
 		}
 		out = append(out, res)
 	}
@@ -87,7 +84,6 @@ func ResolveComeOut(bets []models.Bet, die1, die2 int) []models.BetResult {
 func ResolvePointPhase(bets []models.Bet, die1, die2, point int) []models.BetResult {
 	total := die1 + die2
 	phaseResult := EvalPointPhase(total, point)
-	isHard := IsHardway(die1, die2)
 	var out []models.BetResult
 
 	for _, b := range bets {
@@ -122,30 +118,6 @@ func ResolvePointPhase(bets []models.Bet, die1, die2, point int) []models.BetRes
 			default:
 				continue
 			}
-		case models.BetPassOdds:
-			switch phaseResult {
-			case PointPhasePointHit:
-				num, den := PassOddsPayout(point)
-				res.Outcome = models.BetWin
-				res.NetChips = b.Amount * num / den
-			case PointPhaseSevenOut:
-				res.Outcome = models.BetLose
-				res.NetChips = -b.Amount
-			default:
-				continue
-			}
-		case models.BetDontOdds:
-			switch phaseResult {
-			case PointPhasePointHit:
-				res.Outcome = models.BetLose
-				res.NetChips = -b.Amount
-			case PointPhaseSevenOut:
-				num, den := DontPassOddsPayout(point)
-				res.Outcome = models.BetWin
-				res.NetChips = b.Amount * num / den
-			default:
-				continue
-			}
 		case models.BetPlace:
 			if total == 7 {
 				res.Outcome = models.BetLose
@@ -157,47 +129,15 @@ func ResolvePointPhase(bets []models.Bet, die1, die2, point int) []models.BetRes
 			} else {
 				continue
 			}
-		case models.BetHardway:
+		case models.BetLayPlace:
 			if total == 7 {
-				res.Outcome = models.BetLose
-				res.NetChips = -b.Amount
-			} else if total == b.Number && isHard {
-				num, den := HardwayPayout(b.Number)
 				res.Outcome = models.BetWin
-				res.NetChips = b.Amount * num / den
-			} else if total == b.Number && !isHard {
-				// Soft hit — hardway loses
+				res.NetChips = LayPlaceWin(b.Amount, b.Number)
+			} else if total == b.Number {
 				res.Outcome = models.BetLose
 				res.NetChips = -b.Amount
 			} else {
 				continue
-			}
-		case models.BetAnyCraps:
-			if total == 2 || total == 3 || total == 12 {
-				res.Outcome = models.BetWin
-				res.NetChips = b.Amount * 7
-			} else {
-				res.Outcome = models.BetLose
-				res.NetChips = -b.Amount
-			}
-		case models.BetAnySeven:
-			if total == 7 {
-				res.Outcome = models.BetWin
-				res.NetChips = b.Amount * 4
-			} else {
-				res.Outcome = models.BetLose
-				res.NetChips = -b.Amount
-			}
-		case models.BetHighLow:
-			if total == 7 {
-				res.Outcome = models.BetPush
-				res.NetChips = 0
-			} else if (b.Number == 1 && IsHigh(total)) || (b.Number == 0 && IsLow(total)) {
-				res.Outcome = models.BetWin
-				res.NetChips = b.Amount
-			} else {
-				res.Outcome = models.BetLose
-				res.NetChips = -b.Amount
 			}
 		default:
 			continue
@@ -207,13 +147,7 @@ func ResolvePointPhase(bets []models.Bet, die1, die2, point int) []models.BetRes
 	return out
 }
 
-// IsOneRollBet returns true for bets that resolve on every roll.
-func IsOneRollBet(t models.BetType) bool {
-	return t == models.BetAnyCraps || t == models.BetAnySeven || t == models.BetHighLow
-}
-
-// IsPassPhaseBet returns true for bets only allowed in point phase.
+// IsPassPhaseBet returns true for bets only allowed to be placed in point phase.
 func IsPassPhaseBet(t models.BetType) bool {
-	return t == models.BetPassOdds || t == models.BetDontOdds ||
-		t == models.BetPlace || t == models.BetHardway
+	return t == models.BetPlace
 }

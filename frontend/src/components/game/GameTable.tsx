@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../store/store';
 import { clearError, clearRollOutcome } from '../../store/gameSlice';
 import { formatChips } from '../../utils/format';
+import { MSG } from '../../types/websocket';
 import DiceArea from './DiceArea';
 import BettingPanel from './BettingPanel';
 import GameLog from './GameLog';
@@ -28,6 +29,14 @@ export default function GameTable({ send }: Props) {
   const error = useSelector((s: RootState) => s.game.lastError);
   const rollOutcome = useSelector((s: RootState) => s.game.rollOutcome);
   const [showHistory, setShowHistory] = useState(false);
+
+  const endGameVotes = game?.endGameVotes ?? [];
+  const iHaveVoted = endGameVotes.includes(myPlayerId ?? '');
+  const opponentVoted = endGameVotes.some(id => id !== myPlayerId);
+  const requestingPlayer = game?.players.find(p => endGameVotes.includes(p.id) && p.id !== myPlayerId);
+
+  const requestEndGame = () => send(MSG.END_GAME, { gameId: game?.id });
+  const cancelEndGame = () => send(MSG.CANCEL_END_GAME, { gameId: game?.id });
 
   useEffect(() => {
     if (!error) return;
@@ -98,6 +107,33 @@ export default function GameTable({ send }: Props) {
         />
       )}
 
+      {/* End-game confirmation overlay */}
+      {opponentVoted && !iHaveVoted && game && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+          <div className="w-full max-w-sm bg-gray-900 border border-gray-700 rounded-2xl p-6 text-center space-y-4">
+            <div className="text-2xl">🏁</div>
+            <p className="text-white font-semibold text-lg">
+              {requestingPlayer?.name ?? 'Your opponent'} wants to end the game
+            </p>
+            <p className="text-gray-400 text-sm">Do you want to end the session and save stats?</p>
+            <div className="flex gap-3">
+              <button
+                onClick={cancelEndGame}
+                className="flex-1 py-3 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 font-medium border border-gray-700 transition-colors"
+              >
+                Keep Playing
+              </button>
+              <button
+                onClick={requestEndGame}
+                className="flex-1 py-3 rounded-xl bg-red-700 hover:bg-red-600 text-white font-medium transition-colors"
+              >
+                End Game
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {game.phase === 'WAITING' && <WaitingRoom send={send} />}
       {game.phase === 'SHOOTER_DETERMINATION' && <ShooterSelector send={send} />}
 
@@ -120,7 +156,26 @@ export default function GameTable({ send }: Props) {
                 <PointMarker point={game.point} />
                 <DiceArea />
               </div>
-              <div><BettingPanel send={send} /></div>
+              <div className="space-y-4">
+                <BettingPanel send={send} />
+                {inGame && (
+                  <div className="text-center">
+                    {iHaveVoted ? (
+                      <div className="space-y-2">
+                        <p className="text-xs text-yellow-400">Waiting for opponent to confirm end...</p>
+                        <button onClick={cancelEndGame} className="text-xs text-gray-500 hover:text-gray-300 underline transition-colors">Cancel request</button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={requestEndGame}
+                        className="text-xs text-gray-600 hover:text-red-400 transition-colors"
+                      >
+                        Request End Game
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -159,14 +214,24 @@ export default function GameTable({ send }: Props) {
               <BettingPanel send={send} mobile />
             </div>
 
-            {/* Bottom bar: roll history link */}
-            <div className="px-4 pb-2 pt-1 border-t border-gray-800">
+            {/* Bottom bar: roll history + end game */}
+            <div className="px-4 pb-2 pt-1 border-t border-gray-800 flex items-center gap-2">
               <button
                 onClick={() => setShowHistory(true)}
-                className="w-full text-xs text-gray-500 hover:text-gray-300 py-1.5 transition-colors"
+                className="flex-1 text-xs text-gray-500 hover:text-gray-300 py-1.5 transition-colors"
               >
-                View Roll History {game.rollHistory?.length ? `(${game.rollHistory.length})` : ''}
+                Roll History {game.rollHistory?.length ? `(${game.rollHistory.length})` : ''}
               </button>
+              <div className="w-px h-4 bg-gray-700" />
+              {iHaveVoted ? (
+                <button onClick={cancelEndGame} className="text-xs text-yellow-500 hover:text-yellow-300 py-1.5 transition-colors">
+                  Cancel end request
+                </button>
+              ) : (
+                <button onClick={requestEndGame} className="text-xs text-gray-600 hover:text-red-400 py-1.5 transition-colors">
+                  End Game
+                </button>
+              )}
             </div>
           </div>
         </>
