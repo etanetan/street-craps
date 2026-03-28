@@ -223,6 +223,23 @@ func (h *WSHandler) handlePlaceBet(ctx context.Context, c *hub.Client, raw json.
 		PlayerChips: playerChips,
 	})
 
+	// Auto-match: when shooter places Pass Line, auto-place Don't Pass for non-shooters
+	autoMatched := game.AutoMatchBets(g, bet)
+	for _, autobet := range autoMatched {
+		chips := int64(0)
+		for _, pl := range g.Players {
+			if pl.ID == autobet.PlayerID {
+				chips = pl.Chips
+				break
+			}
+		}
+		h.hub.Broadcast(g.ID, models.MsgBetPlaced, models.BetPlacedPayload{
+			Bet:         autobet,
+			PlayerID:    autobet.PlayerID,
+			PlayerChips: chips,
+		})
+	}
+
 	h.saveGame(ctx, g)
 }
 

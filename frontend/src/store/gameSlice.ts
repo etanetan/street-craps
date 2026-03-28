@@ -14,15 +14,21 @@ import type {
 
 export type DiceAnimationState = 'idle' | 'shaking' | 'settling' | 'done';
 
+export interface RollOutcome {
+  net: number;   // cents, positive = win, negative = loss
+  label: string; // "Natural!", "Craps!", "Point hit!", "Seven out!"
+}
+
 interface GameState {
   game: Game | null;
   myPlayerId: string | null;
   myPlayerToken: string | null;
-  pendingRoll: DiceRolledPayload | null; // current roll, waiting for animation
-  pendingBetResults: BetResult[];        // queued until animation done
+  pendingRoll: DiceRolledPayload | null;
+  pendingBetResults: BetResult[];
   diceAnimation: DiceAnimationState;
   lastError: string | null;
   wsConnected: boolean;
+  rollOutcome: RollOutcome | null;
 }
 
 const initialState: GameState = {
@@ -34,6 +40,7 @@ const initialState: GameState = {
   diceAnimation: 'idle',
   lastError: null,
   wsConnected: false,
+  rollOutcome: null,
 };
 
 const gameSlice = createSlice({
@@ -76,6 +83,28 @@ const gameSlice = createSlice({
 
     betResultsQueued(state, action: PayloadAction<BetsResolvedPayload>) {
       state.pendingBetResults = action.payload.results;
+
+      if (!state.myPlayerId || !state.game) return;
+      const myResults = action.payload.results.filter(r => r.playerId === state.myPlayerId);
+      if (myResults.length === 0) return;
+
+      const net = myResults.reduce((sum, r) => sum + r.netChips, 0);
+      const total = state.pendingRoll ? state.pendingRoll.die1 + state.pendingRoll.die2 : 0;
+
+      let label = '';
+      if (state.game.phase === 'COME_OUT') {
+        if (total === 7 || total === 11) label = 'Natural!';
+        else if (total === 2 || total === 3 || total === 12) label = 'Craps!';
+      } else if (state.game.phase === 'POINT_PHASE') {
+        if (total === state.game.point) label = 'Point hit!';
+        else if (total === 7) label = 'Seven out!';
+      }
+
+      state.rollOutcome = { net, label };
+    },
+
+    clearRollOutcome(state) {
+      state.rollOutcome = null;
     },
 
     phaseChanged(state, action: PayloadAction<PhaseChangedPayload>) {
@@ -142,6 +171,7 @@ export const {
   diceRolled,
   diceAnimationComplete,
   betResultsQueued,
+  clearRollOutcome,
   phaseChanged,
   betPlaced,
   betRemoved,

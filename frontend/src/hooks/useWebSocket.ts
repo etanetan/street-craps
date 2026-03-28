@@ -38,6 +38,8 @@ export function useWebSocket(gameId: string | null) {
   const reconnectTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const attemptRef = useRef(0);
   const unmountedRef = useRef(false);
+  const holdGameStateUntil = useRef<number>(0);
+  const pendingGameState = useRef<Game | null>(null);
 
   const connect = useCallback(() => {
     if (!gameId || !playerToken || unmountedRef.current) return;
@@ -73,9 +75,21 @@ export function useWebSocket(gameId: string | null) {
 
   const handleMessage = (type: string, payload: unknown) => {
     switch (type) {
-      case MSG.GAME_STATE:
-        dispatch(setGame(payload as Game));
+      case MSG.GAME_STATE: {
+        const now = Date.now();
+        if (holdGameStateUntil.current > now) {
+          pendingGameState.current = payload as Game;
+          setTimeout(() => {
+            if (pendingGameState.current) {
+              dispatch(setGame(pendingGameState.current));
+              pendingGameState.current = null;
+            }
+          }, holdGameStateUntil.current - now);
+        } else {
+          dispatch(setGame(payload as Game));
+        }
         break;
+      }
       case MSG.DICE_ROLLED:
         dispatch(diceRolled(payload as DiceRolledPayload));
         break;
@@ -100,6 +114,7 @@ export function useWebSocket(gameId: string | null) {
       case MSG.SHOOTER_DETERMINED: {
         const p = payload as ShooterDeterminedPayload;
         dispatch(shooterDetermined(p));
+        holdGameStateUntil.current = Date.now() + 2500;
         break;
       }
       case MSG.ERROR: {

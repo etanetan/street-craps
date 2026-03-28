@@ -1,9 +1,9 @@
 // All chip amounts are stored as integer cents.
 // Display format: "$100" for 10000 cents (i.e. divide by 100 and show no decimals for round numbers)
 export function formatChips(cents: number): string {
-  const dollars = cents / 100;
-  if (dollars % 1 === 0) return `$${dollars.toFixed(0)}`;
-  return `$${dollars.toFixed(2)}`;
+  const dollars = Math.abs(cents) / 100;
+  const formatted = dollars % 1 === 0 ? dollars.toFixed(0) : dollars.toFixed(2);
+  return cents < 0 ? `-$${formatted}` : `$${formatted}`;
 }
 
 export function centsFromDollars(dollars: number): number {

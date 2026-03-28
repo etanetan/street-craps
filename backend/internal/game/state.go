@@ -156,6 +156,51 @@ func PlaceBet(g *models.Game, playerID string, betType models.BetType, amount in
 	return &bet, nil
 }
 
+// AutoMatchBets places a matching Don't Pass bet for each non-shooter when
+// the shooter places a Pass Line bet during the come-out phase.
+func AutoMatchBets(g *models.Game, shooterBet *models.Bet) []models.Bet {
+	if shooterBet.Type != models.BetPassLine || g.ShooterID != shooterBet.PlayerID {
+		return nil
+	}
+	if g.Phase != models.PhaseComeOut {
+		return nil
+	}
+	var placed []models.Bet
+	for i := range g.Players {
+		p := &g.Players[i]
+		if p.ID == shooterBet.PlayerID {
+			continue
+		}
+		// Skip if already has an active Don't Pass bet
+		for _, b := range p.Bets {
+			if b.Type == models.BetDontPass && b.Active {
+				goto nextPlayer
+			}
+		}
+		{
+			matchAmt := shooterBet.Amount
+			if p.Chips < matchAmt {
+				matchAmt = p.Chips
+			}
+			if matchAmt <= 0 {
+				goto nextPlayer
+			}
+			bet := models.Bet{
+				ID:       uuid.New().String(),
+				PlayerID: p.ID,
+				Type:     models.BetDontPass,
+				Amount:   matchAmt,
+				Active:   true,
+			}
+			p.Chips -= matchAmt
+			p.Bets = append(p.Bets, bet)
+			placed = append(placed, bet)
+		}
+	nextPlayer:
+	}
+	return placed
+}
+
 // RemoveBet removes a bet before the roll.
 func RemoveBet(g *models.Game, playerID, betID string) (int64, error) {
 	pidx := playerIndex(g, playerID)
