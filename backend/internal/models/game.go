@@ -39,6 +39,19 @@ type Bet struct {
 	Active   bool    `firestore:"active" json:"active"`
 }
 
+// PendingBetRequest is created when the shooter places a bet the fader can't fully cover.
+// The fader must approve (cover with available chips) or deny (shooter's bet is cancelled).
+type PendingBetRequest struct {
+	ID              string  `firestore:"id" json:"id"`
+	ShooterBetID    string  `firestore:"shooter_bet_id" json:"shooterBetId"`
+	ShooterPlayerID string  `firestore:"shooter_player_id" json:"shooterPlayerId"`
+	BetType         BetType `firestore:"bet_type" json:"betType"`
+	Amount          int64   `firestore:"amount" json:"amount"` // shooter's requested amount
+	Number          int     `firestore:"number" json:"number"` // for Place bets
+	FaderPlayerID   string  `firestore:"fader_player_id" json:"faderPlayerId"`
+	FaderCanCover   int64   `firestore:"fader_can_cover" json:"faderCanCover"` // fader's current chips
+}
+
 type DiceRoll struct {
 	Die1      int       `firestore:"die1" json:"die1"`
 	Die2      int       `firestore:"die2" json:"die2"`
@@ -79,7 +92,8 @@ type Game struct {
 	RollHistory          []DiceRoll    `firestore:"roll_history" json:"rollHistory"`
 	ShooterDetermination []ShooterRoll `firestore:"shooter_determination" json:"shooterDetermination"`
 	DetermineRound       int           `firestore:"determine_round" json:"determineRound"`
-	EndGameVotes         []string      `firestore:"end_game_votes" json:"endGameVotes"` // player IDs who voted to end
+	EndGameVotes         []string           `firestore:"end_game_votes" json:"endGameVotes"` // player IDs who voted to end
+	PendingBetRequests   []PendingBetRequest `firestore:"pending_bet_requests" json:"pendingBetRequests,omitempty"`
 	CreatedAt            time.Time     `firestore:"created_at" json:"createdAt"`
 	UpdatedAt            time.Time     `firestore:"updated_at" json:"updatedAt"`
 }

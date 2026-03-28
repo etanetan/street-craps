@@ -11,6 +11,7 @@ import PlayerList from './PlayerList';
 import PointMarker from './PointMarker';
 import ShooterSelector from './ShooterSelector';
 import BustModal from './BustModal';
+import BetApprovalModal from './BetApprovalModal';
 import WaitingRoom from '../lobby/WaitingRoom';
 
 interface Props {
@@ -106,6 +107,8 @@ export default function GameTable({ send }: Props) {
           </div>
         </div>
       )}
+
+      <BetApprovalModal send={send} />
 
       {bustedPlayer && game && (
         <BustModal
