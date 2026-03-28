@@ -86,25 +86,22 @@ func DontPassOddsPayout(point int) (int64, int64) {
 }
 
 // PlacePayout returns (num, den) for place bets (number hits before 7).
+// Pays true odds: 2:1 for 4/10, 3:2 for 5/9, 6:5 for 6/8.
 func PlacePayout(number int) (int64, int64) {
 	switch number {
 	case 4, 10:
-		return 9, 5
+		return 2, 1
 	case 5, 9:
-		return 7, 5
+		return 3, 2
 	case 6, 8:
-		return 7, 6
+		return 6, 5
 	}
 	return 1, 1
 }
 
-// HardwayPayout returns (num, den) for hardway bets.
-func HardwayPayout(number int) (int64, int64) {
-	switch number {
-	case 4, 10:
-		return 7, 1
-	case 6, 8:
-		return 9, 1
-	}
-	return 1, 1
+// LayPlaceWin returns the profit for a lay-place bet (non-shooter) when 7 hits.
+// The lay amount is the full wager; win = amount * den / num.
+func LayPlaceWin(layAmount int64, number int) int64 {
+	num, den := PlacePayout(number)
+	return layAmount * den / num
 }

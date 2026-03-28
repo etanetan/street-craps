@@ -206,6 +206,58 @@ func AutoMatchBets(g *models.Game, shooterBet *models.Bet) []models.Bet {
 	return placed
 }
 
+// AutoMatchPlaceBet places a matching LayPlace bet for each non-shooter when
+// the shooter places a Place bet. The lay amount = bet * payoutNum / payoutDen.
+func AutoMatchPlaceBet(g *models.Game, shooterBet *models.Bet) []models.Bet {
+	if shooterBet.Type != models.BetPlace || g.ShooterID != shooterBet.PlayerID {
+		return nil
+	}
+
+	num, den := PlacePayout(shooterBet.Number)
+	layAmount := shooterBet.Amount * num / den
+	if layAmount <= 0 {
+		return nil
+	}
+
+	var placed []models.Bet
+	for i := range g.Players {
+		p := &g.Players[i]
+		if p.ID == shooterBet.PlayerID {
+			continue
+		}
+		// Skip if already has an active LayPlace bet for this number
+		alreadyHas := false
+		for _, b := range p.Bets {
+			if b.Type == models.BetLayPlace && b.Number == shooterBet.Number && b.Active {
+				alreadyHas = true
+				break
+			}
+		}
+		if alreadyHas {
+			continue
+		}
+		amt := layAmount
+		if p.Chips < amt {
+			amt = p.Chips
+		}
+		if amt <= 0 {
+			continue
+		}
+		bet := models.Bet{
+			ID:       uuid.New().String(),
+			PlayerID: p.ID,
+			Type:     models.BetLayPlace,
+			Amount:   amt,
+			Number:   shooterBet.Number,
+			Active:   true,
+		}
+		p.Chips -= amt
+		p.Bets = append(p.Bets, bet)
+		placed = append(placed, bet)
+	}
+	return placed
+}
+
 // RemoveBet removes a bet before the roll.
 func RemoveBet(g *models.Game, playerID, betID string) (int64, error) {
 	pidx := playerIndex(g, playerID)

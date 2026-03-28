@@ -113,6 +113,9 @@ func (h *WSHandler) OnMessage(c *hub.Client, raw []byte) {
 	case models.MsgEndGame:
 		h.handleEndGame(ctx, c, msg.Payload)
 
+	case models.MsgCancelEndGame:
+		h.handleCancelEndGame(ctx, c, msg.Payload)
+
 	case models.MsgStartGame:
 		h.handleStartGame(ctx, c, msg.Payload)
 
@@ -149,13 +152,6 @@ func (h *WSHandler) handleStartGame(ctx context.Context, c *hub.Client, raw json
 	if err := game.StartGame(g, c.PlayerID); err != nil {
 		c.Send(models.MsgError, models.ErrorPayload{Code: "start_error", Message: err.Error()})
 		return
-	}
-
-	// Increment GamesPlayed for all logged-in players
-	for _, p := range g.Players {
-		if p.UserID != "" {
-			go h.users.UpdateStats(ctx, p.UserID, models.UserStats{GamesPlayed: 1})
-		}
 	}
 
 	h.saveAndBroadcast(ctx, g)
@@ -239,6 +235,23 @@ func (h *WSHandler) handlePlaceBet(ctx context.Context, c *hub.Client, raw json.
 	// Auto-match: when shooter places Pass Line, auto-place Don't Pass for non-shooters
 	autoMatched := game.AutoMatchBets(g, bet)
 	for _, autobet := range autoMatched {
+		chips := int64(0)
+		for _, pl := range g.Players {
+			if pl.ID == autobet.PlayerID {
+				chips = pl.Chips
+				break
+			}
+		}
+		h.hub.Broadcast(g.ID, models.MsgBetPlaced, models.BetPlacedPayload{
+			Bet:         autobet,
+			PlayerID:    autobet.PlayerID,
+			PlayerChips: chips,
+		})
+	}
+
+	// Auto-match: when shooter places a Place bet, auto-place LayPlace for non-shooters
+	autoPlaceMatched := game.AutoMatchPlaceBet(g, bet)
+	for _, autobet := range autoPlaceMatched {
 		chips := int64(0)
 		for _, pl := range g.Players {
 			if pl.ID == autobet.PlayerID {
@@ -424,13 +437,47 @@ func (h *WSHandler) handleEndGame(ctx context.Context, c *hub.Client, raw json.R
 		return
 	}
 
-	// Record a chip history data point for each logged-in player
-	for _, pl := range g.Players {
-		if pl.UserID != "" {
-			go h.users.RecordGameEnd(ctx, pl.UserID)
+	// Add vote if not already present
+	alreadyVoted := false
+	for _, id := range g.EndGameVotes {
+		if id == c.PlayerID {
+			alreadyVoted = true
+			break
 		}
 	}
+	if !alreadyVoted {
+		g.EndGameVotes = append(g.EndGameVotes, c.PlayerID)
+	}
 
-	// Broadcast game ended to all players so they can navigate away
-	h.hub.Broadcast(g.ID, models.MsgGameEnded, models.GameEndedPayload{GameID: g.ID})
+	// If all players have voted, finalize the game
+	if len(g.EndGameVotes) >= len(g.Players) {
+		for _, pl := range g.Players {
+			if pl.UserID != "" {
+				go h.users.RecordGameEnd(ctx, pl.UserID)
+				go h.users.UpdateStats(ctx, pl.UserID, models.UserStats{GamesPlayed: 1})
+			}
+		}
+		h.hub.Broadcast(g.ID, models.MsgGameEnded, models.GameEndedPayload{GameID: g.ID})
+		return
+	}
+
+	// Otherwise just broadcast updated state so the other player sees the request
+	h.saveAndBroadcast(ctx, g)
+}
+
+func (h *WSHandler) handleCancelEndGame(ctx context.Context, c *hub.Client, raw json.RawMessage) {
+	var p models.CancelEndGamePayload
+	if err := json.Unmarshal(raw, &p); err != nil {
+		c.Send(models.MsgError, models.ErrorPayload{Code: "parse_error", Message: "Bad payload"})
+		return
+	}
+
+	g, ok := h.getGame(ctx, p.GameID)
+	if !ok {
+		return
+	}
+
+	// Clear all end-game votes
+	g.EndGameVotes = nil
+	h.saveAndBroadcast(ctx, g)
 }
