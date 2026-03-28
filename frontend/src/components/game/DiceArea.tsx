@@ -81,7 +81,7 @@ export function DieFaceCSS({ value, theme = 'classic', animClass = '', size = 11
   );
 }
 
-export default function DiceArea() {
+export default function DiceArea({ mobile = false }: { mobile?: boolean }) {
   const dispatch = useDispatch<AppDispatch>();
   const pendingRoll = useSelector((s: RootState) => s.game.pendingRoll);
   const animState = useSelector((s: RootState) => s.game.diceAnimation);
@@ -122,17 +122,19 @@ export default function DiceArea() {
 
   const total = displayDie1 + displayDie2;
 
+  const diceSize = mobile ? 76 : 112;
+
   return (
-    <div className="flex flex-col items-center gap-4 py-6 w-full">
-      <div className="flex gap-6 items-center justify-center">
-        <DieFaceCSS value={displayDie1} theme={diceTheme} animClass={animClass} size={112} />
-        <DieFaceCSS value={displayDie2} theme={diceTheme} animClass={animClass} size={112} />
+    <div className={`flex flex-col items-center w-full ${mobile ? 'gap-2 py-2' : 'gap-4 py-6'}`}>
+      <div className={`flex items-center justify-center ${mobile ? 'gap-4' : 'gap-6'}`}>
+        <DieFaceCSS value={displayDie1} theme={diceTheme} animClass={animClass} size={diceSize} />
+        <DieFaceCSS value={displayDie2} theme={diceTheme} animClass={animClass} size={diceSize} />
       </div>
 
-      <div className="text-center" style={{ minHeight: '2.75rem' }}>
+      <div className="text-center" style={{ minHeight: mobile ? '2rem' : '2.75rem' }}>
         {total > 0 && animState !== 'shaking' && (
           <div className="fade-in-up">
-            <div className="text-3xl font-bold text-white">{total}</div>
+            <div className={`font-bold text-white ${mobile ? 'text-2xl' : 'text-3xl'}`}>{total}</div>
             {rollLabel && <div className="text-sm text-gray-300 mt-0.5">{rollLabel}</div>}
           </div>
         )}

@@ -147,12 +147,14 @@ export default function BettingPanel({ send, mobile = false }: Props) {
             ))}
           </div>
 
-          {/* Come-out: cap notice */}
-          {isShooter && isComeOut && passLineMax !== null && passLineMax < amountCents && (
-            <p className="text-xs text-yellow-500 text-center">
-              Capped at {formatChips(passLineMax)} (opponent's balance)
-            </p>
-          )}
+          {/* Come-out: cap notice — always reserve the space */}
+          <div className="h-4">
+            {isShooter && isComeOut && passLineMax !== null && passLineMax < amountCents && (
+              <p className="text-xs text-yellow-500 text-center">
+                Capped at {formatChips(passLineMax)} (opponent's balance)
+              </p>
+            )}
+          </div>
 
           {/* Number buttons */}
           {isShooter && (isComeOut || isPointPhase) && (
@@ -171,7 +173,7 @@ export default function BettingPanel({ send, mobile = false }: Props) {
                       key={n}
                       onClick={() => !disabled && placeBet('PLACE', n)}
                       disabled={disabled}
-                      className={`flex flex-col items-center justify-center rounded-lg px-2 border transition-colors ${mobile ? 'py-2' : 'py-3'} ${
+                      className={`flex flex-col items-center justify-center rounded-lg px-2 border transition-colors ${mobile ? 'py-1.5' : 'py-3'} ${
                         locked || cantAfford
                           ? 'border-gray-800 bg-gray-900 opacity-30 cursor-not-allowed'
                           : alreadyBet
@@ -195,7 +197,7 @@ export default function BettingPanel({ send, mobile = false }: Props) {
         <div className={mobile ? 'sticky bottom-0 pt-2 pb-1 bg-gray-950' : ''}>
           <button
             onClick={handleRoll}
-            className={`w-full text-white font-bold rounded-xl bg-green-600 hover:bg-green-500 pulse-glow transition-colors ${mobile ? 'py-4 text-xl' : 'py-5 text-2xl'}`}
+            className={`w-full text-white font-bold rounded-xl bg-green-600 hover:bg-green-500 pulse-glow transition-colors ${mobile ? 'py-3 text-lg' : 'py-5 text-2xl'}`}
           >
             🎲 Roll Dice
           </button>
