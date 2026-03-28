@@ -23,17 +23,17 @@ export default function Home() {
       </div>
 
       {/* ── MOBILE ── */}
-      <div className="md:hidden flex flex-col min-h-screen py-8">
-        <div className="text-center mb-6">
+      <div className="md:hidden flex flex-col py-6 gap-6">
+        <div className="text-center">
           <h1 className="text-3xl font-bold text-white mb-1">Street Craps</h1>
           <p className="text-sm text-gray-400">Create a game, share the link, play with a friend</p>
         </div>
 
         {/* Tab switcher */}
-        <div className="flex bg-gray-900 border border-gray-700 rounded-xl p-1 mb-4">
+        <div className="flex bg-gray-900 border border-gray-700 rounded-xl p-1">
           <button
             onClick={() => setTab('create')}
-            className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-colors ${
+            className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
               tab === 'create' ? 'bg-green-600 text-white' : 'text-gray-400 hover:text-white'
             }`}
           >
@@ -41,7 +41,7 @@ export default function Home() {
           </button>
           <button
             onClick={() => setTab('join')}
-            className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-colors ${
+            className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
               tab === 'join' ? 'bg-green-600 text-white' : 'text-gray-400 hover:text-white'
             }`}
           >
@@ -49,9 +49,7 @@ export default function Home() {
           </button>
         </div>
 
-        <div className="flex-1 flex flex-col items-center">
-          {tab === 'create' ? <CreateGame /> : <JoinGame />}
-        </div>
+        {tab === 'create' ? <CreateGame mobile /> : <JoinGame mobile />}
       </div>
     </div>
   );
