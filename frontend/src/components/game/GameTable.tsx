@@ -38,6 +38,14 @@ export default function GameTable({ send }: Props) {
   const requestEndGame = () => send(MSG.END_GAME, { gameId: game?.id });
   const cancelEndGame = () => send(MSG.CANCEL_END_GAME, { gameId: game?.id });
 
+  // Warn before closing/refreshing tab during an active game
+  useEffect(() => {
+    if (!inGame) return;
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [inGame]);
+
   useEffect(() => {
     if (!error) return;
     const t = setTimeout(() => dispatch(clearError()), 3000);
