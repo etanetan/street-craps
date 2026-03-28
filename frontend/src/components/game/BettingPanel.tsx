@@ -84,16 +84,14 @@ export default function BettingPanel({ send, mobile = false }: Props) {
 
       {/* Active bets — compact pills on mobile, full card on desktop */}
       {mobile ? (
-        myBets.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {myBets.map((b) => (
-              <div key={b.id} className="flex items-center gap-1 bg-green-900/40 border border-green-800 rounded-full px-2.5 py-1 text-xs">
-                <span className="text-gray-300">{betLabel(b.type, b.number)}</span>
-                <span className="text-green-400 font-mono font-bold">{formatChips(b.amount)}</span>
-              </div>
-            ))}
-          </div>
-        )
+        <div className="h-7 flex items-center flex-wrap gap-1.5 overflow-hidden">
+          {myBets.map((b) => (
+            <div key={b.id} className="flex items-center gap-1 bg-green-900/40 border border-green-800 rounded-full px-2.5 py-1 text-xs shrink-0">
+              <span className="text-gray-300">{betLabel(b.type, b.number)}</span>
+              <span className="text-green-400 font-mono font-bold">{formatChips(b.amount)}</span>
+            </div>
+          ))}
+        </div>
       ) : (
         <div className="bg-gray-900 border border-green-900 rounded-xl p-4">
           <div className="flex items-center justify-between mb-3">
