@@ -103,6 +103,7 @@ export default function GameTable({ send }: Props) {
         <BustModal
           gameId={game.id}
           playerName={bustedPlayer.name}
+          isMe={bustedPlayer.id === myPlayerId}
           send={send}
         />
       )}
