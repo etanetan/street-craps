@@ -191,22 +191,22 @@ export default function GameTable({ send }: Props) {
           {/* ── MOBILE layout (< lg) ── */}
           <div className="lg:hidden flex flex-col overflow-hidden" style={{ height: '100dvh' }}>
             {/* Top bar: phase + players */}
-            <div className="flex-none flex items-center justify-between px-4 py-2 gap-3">
-              <div className={`px-3 py-1 rounded-full text-xs font-medium shrink-0 ${
+            <div className="flex-none flex items-center justify-between px-3 pt-3 pb-4 gap-2">
+              <div className={`px-2.5 py-1 rounded-full text-xs font-medium shrink-0 ${
                 game.phase === 'COME_OUT' ? 'bg-blue-900/50 text-blue-300 border border-blue-700'
                 : 'bg-yellow-900/50 text-yellow-300 border border-yellow-700'
               }`}>
                 {game.phase === 'COME_OUT' ? 'Come-Out' : `Point: ${game.point}`}
               </div>
-              <div className="flex gap-2 overflow-hidden">
+              <div className="flex gap-1.5 min-w-0 shrink">
                 {game.players.map(p => (
-                  <div key={p.id} className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs shrink-0 ${
+                  <div key={p.id} className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs min-w-0 ${
                     p.id === myPlayerId ? 'bg-green-900/30 border border-green-800' : 'bg-gray-800'
                   }`}>
-                    <div className={`w-1.5 h-1.5 rounded-full ${p.isConnected ? 'bg-green-400' : 'bg-gray-600'}`} />
-                    <span className="text-gray-300 font-medium truncate max-w-[60px]">{p.name}</span>
-                    {p.isShooter && <span className="text-yellow-400">🎲</span>}
-                    <span className="text-green-400 font-mono font-bold">{formatChips(p.chips)}</span>
+                    <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${p.isConnected ? 'bg-green-400' : 'bg-gray-600'}`} />
+                    <span className="text-gray-300 font-medium truncate max-w-[48px]">{p.name}</span>
+                    {p.isShooter && <span className="text-yellow-400 shrink-0">🎲</span>}
+                    <span className="text-green-400 font-mono font-bold shrink-0">{formatChips(p.chips)}</span>
                   </div>
                 ))}
               </div>
