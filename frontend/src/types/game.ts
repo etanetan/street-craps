@@ -52,6 +52,7 @@ export interface Player {
   isConnected: boolean;
   seatOrder: number;
   diceTheme: string;
+  diceAnimStyle: string;
   bets: Bet[];
 }
 

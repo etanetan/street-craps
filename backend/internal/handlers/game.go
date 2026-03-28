@@ -40,9 +40,10 @@ type createGameResponse struct {
 }
 
 type joinGameRequest struct {
-	Name      string `json:"name"`
-	BuyIn     int64  `json:"buyIn"` // cents
-	DiceTheme string `json:"diceTheme"`
+	Name          string `json:"name"`
+	BuyIn         int64  `json:"buyIn"` // cents
+	DiceTheme     string `json:"diceTheme"`
+	DiceAnimStyle string `json:"diceAnimStyle"`
 }
 
 type joinGameResponse struct {
@@ -122,6 +123,9 @@ func (h *GameHandler) JoinGame(w http.ResponseWriter, r *http.Request) {
 	if req.DiceTheme == "" {
 		req.DiceTheme = "classic"
 	}
+	if req.DiceAnimStyle == "" {
+		req.DiceAnimStyle = "shake"
+	}
 
 	claims, _ := auth.ClaimsFrom(r.Context())
 	userID := ""
@@ -147,7 +151,7 @@ func (h *GameHandler) JoinGame(w http.ResponseWriter, r *http.Request) {
 	if g.HostID == "" {
 		g.HostID = playerID
 	}
-	if err := game.AddPlayer(g, playerID, userID, req.Name, req.BuyIn, req.DiceTheme, seatOrder); err != nil {
+	if err := game.AddPlayer(g, playerID, userID, req.Name, req.BuyIn, req.DiceTheme, req.DiceAnimStyle, seatOrder); err != nil {
 		writeError(w, http.StatusBadRequest, "join_error", err.Error())
 		return
 	}

@@ -10,6 +10,7 @@ export default function CreateGame() {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const theme = useSelector((s: RootState) => s.ui.selectedDiceTheme);
+  const animStyle = useSelector((s: RootState) => s.ui.selectedDiceAnimStyle);
   const [name, setName] = useState('');
   const [buyIn, setBuyIn] = useState('100');
   const [loading, setLoading] = useState(false);
@@ -32,6 +33,7 @@ export default function CreateGame() {
         name: name.trim(),
         buyIn: buyInCents,
         diceTheme: theme,
+        diceAnimStyle: animStyle,
       });
 
       const { playerId, playerToken } = joinRes.data;

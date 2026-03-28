@@ -34,7 +34,7 @@ type RollResult struct {
 // --- State transition functions (pure: take game, return new game + events) ---
 
 // AddPlayer adds a player to a WAITING game.
-func AddPlayer(g *models.Game, playerID, userID, name string, buyIn int64, diceTheme string, seatOrder int) error {
+func AddPlayer(g *models.Game, playerID, userID, name string, buyIn int64, diceTheme, diceAnimStyle string, seatOrder int) error {
 	if g.Phase != models.PhaseWaiting {
 		return errors.New("game is not in waiting phase")
 	}
@@ -51,7 +51,8 @@ func AddPlayer(g *models.Game, playerID, userID, name string, buyIn int64, diceT
 		BuyIn:       buyIn,
 		IsConnected: true,
 		SeatOrder:   seatOrder,
-		DiceTheme:   diceTheme,
+		DiceTheme:     diceTheme,
+		DiceAnimStyle: diceAnimStyle,
 		Bets:        []models.Bet{},
 	})
 	return nil

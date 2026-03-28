@@ -68,7 +68,8 @@ type Player struct {
 	IsShooter   bool   `firestore:"is_shooter" json:"isShooter"`
 	IsConnected bool   `firestore:"is_connected" json:"isConnected"`
 	SeatOrder   int    `firestore:"seat_order" json:"seatOrder"`
-	DiceTheme   string `firestore:"dice_theme" json:"diceTheme"`
+	DiceTheme     string `firestore:"dice_theme" json:"diceTheme"`
+	DiceAnimStyle string `firestore:"dice_anim_style" json:"diceAnimStyle"`
 	Bets        []Bet  `firestore:"bets" json:"bets"`
 }
 

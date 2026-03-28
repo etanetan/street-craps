@@ -14,6 +14,7 @@ export default function JoinGame({ initialCode = '' }: Props) {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const theme = useSelector((s: RootState) => s.ui.selectedDiceTheme);
+  const animStyle = useSelector((s: RootState) => s.ui.selectedDiceAnimStyle);
   const [code, setCode] = useState(initialCode.toUpperCase());
   const [name, setName] = useState('');
   const [buyIn, setBuyIn] = useState('100');
@@ -38,6 +39,7 @@ export default function JoinGame({ initialCode = '' }: Props) {
         name: name.trim(),
         buyIn: buyInCents,
         diceTheme: theme,
+        diceAnimStyle: animStyle,
       });
 
       const { playerId, playerToken } = joinRes.data;

@@ -145,6 +145,13 @@ func (h *WSHandler) handleStartGame(ctx context.Context, c *hub.Client, raw json
 		return
 	}
 
+	// Increment GamesPlayed for all logged-in players
+	for _, p := range g.Players {
+		if p.UserID != "" {
+			go h.users.UpdateStats(ctx, p.UserID, models.UserStats{GamesPlayed: 1})
+		}
+	}
+
 	h.saveAndBroadcast(ctx, g)
 }
 
@@ -240,7 +247,9 @@ func (h *WSHandler) handlePlaceBet(ctx context.Context, c *hub.Client, raw json.
 		})
 	}
 
-	h.saveGame(ctx, g)
+	// Broadcast full state after all bets are recorded so clients stay in sync
+	// even if a BET_PLACED message was missed.
+	h.saveAndBroadcast(ctx, g)
 }
 
 func (h *WSHandler) handleRemoveBet(ctx context.Context, c *hub.Client, raw json.RawMessage) {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../store/store';
 import { MSG } from '../../types/websocket';
@@ -13,6 +13,11 @@ export default function ShooterSelector({ send }: Props) {
   const game = useSelector((s: RootState) => s.game.game);
   const myPlayerId = useSelector((s: RootState) => s.game.myPlayerId);
   const [rolled, setRolled] = useState(false);
+
+  // Reset optimistic roll flag on every new round (handles tie-breakers)
+  useEffect(() => {
+    setRolled(false);
+  }, [game?.determineRound]);
 
   if (!game) return null;
 

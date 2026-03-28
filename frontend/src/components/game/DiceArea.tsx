@@ -13,17 +13,24 @@ const DOT_POSITIONS: Record<number, [number, number][]> = {
   6: [[28, 20], [28, 50], [28, 80], [72, 20], [72, 50], [72, 80]],
 };
 
+// CSS class for each animation style while shaking
+const ANIM_CLASS: Record<string, string> = {
+  shake:  'dice-anim-shake',
+  bounce: 'dice-anim-bounce',
+  spin:   'dice-anim-spin',
+  tumble: 'dice-anim-tumble',
+  pulse:  'dice-anim-pulse',
+};
+
 interface DieFaceProps {
   value: number;
   theme?: string;
-  animState?: string;
+  animClass?: string;
   size?: number;
 }
 
-export function DieFaceCSS({ value, theme = 'classic', animState = 'done', size = 112 }: DieFaceProps) {
+export function DieFaceCSS({ value, theme = 'classic', animClass = '', size = 112 }: DieFaceProps) {
   const dots = value >= 1 && value <= 6 ? DOT_POSITIONS[value] : [];
-  const isAnimating = animState === 'shaking';
-  const isSettling = animState === 'settling';
   const dotSize = Math.max(3, Math.round(size * 0.16));
   const radius = Math.round(size * 0.18);
 
@@ -47,7 +54,7 @@ export function DieFaceCSS({ value, theme = 'classic', animState = 'done', size 
 
   return (
     <div
-      className={`relative flex-shrink-0 select-none ${isAnimating ? 'dice-shaking' : ''} ${isSettling ? 'dice-settling' : ''}`}
+      className={`relative flex-shrink-0 select-none ${animClass}`}
       style={{ width: size, height: size, ...containerStyle }}
     >
       {dots.map(([left, top], i) => (
@@ -79,14 +86,18 @@ export default function DiceArea() {
   const pendingRoll = useSelector((s: RootState) => s.game.pendingRoll);
   const animState = useSelector((s: RootState) => s.game.diceAnimation);
   const localTheme = useSelector((s: RootState) => s.ui.selectedDiceTheme);
+  const localAnimStyle = useSelector((s: RootState) => s.ui.selectedDiceAnimStyle);
   const rollLabel = useSelector((s: RootState) => s.game.pendingRollLabel);
   const game = useSelector((s: RootState) => s.game.game);
   const [displayDie1, setDisplayDie1] = useState(0);
   const [displayDie2, setDisplayDie2] = useState(0);
 
-  // Use the shooter's dice theme if available, otherwise fall back to local preference
+  // Use the shooter's dice preferences if available, otherwise local preference
   const shooter = game?.players.find(p => p.isShooter);
   const diceTheme = shooter?.diceTheme || localTheme;
+  const diceAnimStyle = shooter?.diceAnimStyle || localAnimStyle;
+
+  const animClass = animState === 'shaking' ? (ANIM_CLASS[diceAnimStyle] || 'dice-anim-shake') : '';
 
   useEffect(() => {
     if (animState === 'shaking' && pendingRoll) {
@@ -104,8 +115,8 @@ export default function DiceArea() {
   return (
     <div className="flex flex-col items-center gap-4 py-6 w-full">
       <div className="flex gap-6 items-center justify-center">
-        <DieFaceCSS value={displayDie1} theme={diceTheme} animState={animState} size={112} />
-        <DieFaceCSS value={displayDie2} theme={diceTheme} animState={animState} size={112} />
+        <DieFaceCSS value={displayDie1} theme={diceTheme} animClass={animClass} size={112} />
+        <DieFaceCSS value={displayDie2} theme={diceTheme} animClass={animClass} size={112} />
       </div>
 
       {total > 0 && animState !== 'shaking' && (
