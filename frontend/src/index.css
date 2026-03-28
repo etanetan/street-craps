@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    @apply bg-gray-950 text-white min-h-screen m-0;
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  #root {
+    min-height: 100vh;
+    width: 100%;
+  }
+}
+
+/* Dice animations */
+@keyframes diceShake {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  10% { transform: rotate(-8deg) scale(1.05); }
+  25% { transform: rotate(8deg) scale(1.1); }
+  40% { transform: rotate(-10deg) scale(1.15); }
+  55% { transform: rotate(10deg) scale(1.1); }
+  70% { transform: rotate(-6deg) scale(1.05); }
+  85% { transform: rotate(4deg) scale(1.02); }
+}
+
+@keyframes diceSettle {
+  0% { transform: rotate(5deg) scale(1.05); }
+  50% { transform: rotate(-2deg) scale(1.02); }
+  100% { transform: rotate(0deg) scale(1); }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 8px rgba(74, 222, 128, 0.4); }
+  50% { box-shadow: 0 0 20px rgba(74, 222, 128, 0.8); }
+}
+
+.dice-shaking { animation: diceShake 0.8s ease-in-out; }
+.dice-settling { animation: diceSettle 0.4s ease-out; }
+.fade-in-up { animation: fadeInUp 0.3s ease-out; }
+.pulse-glow { animation: pulse-glow 2s infinite; }
