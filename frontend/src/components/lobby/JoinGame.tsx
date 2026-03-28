@@ -61,7 +61,7 @@ export default function JoinGame({ initialCode = '' }: Props) {
   };
 
   return (
-    <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 w-full max-w-sm">
+    <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 w-full max-w-sm mx-auto">
       <h2 className="text-lg font-bold text-white mb-4">Join Game</h2>
       <form onSubmit={handleJoin} className="space-y-4">
         {error && (
