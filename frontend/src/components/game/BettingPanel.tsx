@@ -91,16 +91,25 @@ export default function BettingPanel({ send }: Props) {
         </div>
       )}
 
-      {/* My active bets */}
-      {myBets.length > 0 && (
-        <div className="bg-gray-900 border border-gray-700 rounded-xl p-4">
-          <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">Your Bets</h3>
-          <div className="space-y-1">
+      {/* My active bets — always visible */}
+      <div className="bg-gray-900 border border-green-900 rounded-xl p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-xs font-medium text-green-400 uppercase tracking-wider">Your Bets on the Board</h3>
+          {myBets.length > 0 && (
+            <span className="text-xs text-gray-400 font-mono">
+              Total: {formatChips(myBets.reduce((s, b) => s + b.amount, 0))}
+            </span>
+          )}
+        </div>
+        {myBets.length === 0 ? (
+          <p className="text-xs text-gray-600 italic">No bets placed yet</p>
+        ) : (
+          <div className="space-y-1.5">
             {myBets.map((b) => (
-              <div key={b.id} className="flex items-center justify-between text-sm">
-                <span className="text-gray-300">{betLabel(b.type, b.number)}</span>
+              <div key={b.id} className="flex items-center justify-between text-sm bg-gray-800 rounded-lg px-3 py-2">
+                <span className="text-gray-200 font-medium">{betLabel(b.type, b.number)}</span>
                 <div className="flex items-center gap-3">
-                  <span className="text-green-400 font-mono">{formatChips(b.amount)}</span>
+                  <span className="text-green-400 font-mono font-bold">{formatChips(b.amount)}</span>
                   <button
                     onClick={() => send(MSG.REMOVE_BET, { gameId: game.id, betId: b.id })}
                     className="text-gray-600 hover:text-red-400 text-xs transition-colors"
@@ -112,8 +121,8 @@ export default function BettingPanel({ send }: Props) {
               </div>
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Bet amount */}
       <div className="bg-gray-900 border border-gray-700 rounded-xl p-4">
