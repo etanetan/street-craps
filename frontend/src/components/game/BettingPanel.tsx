@@ -61,18 +61,25 @@ export default function BettingPanel({ send, mobile = false }: Props) {
     setTimeout(() => setJustPlaced(null), 2000);
   };
 
-  const handleRoll = () => send(MSG.ROLL_DICE, { gameId: game.id });
+  const handleRoll = () => {
+    // On come-out, auto-place Pass Line at the selected amount before rolling
+    if (isComeOut && !hasPassLine) {
+      let cents = amountCents;
+      if (passLineMax !== null) cents = Math.min(cents, passLineMax);
+      if (isNaN(cents) || cents <= 0) return;
+      send(MSG.PLACE_BET, { gameId: game.id, betType: 'PASS_LINE', amount: cents, number: 0 });
+    }
+    send(MSG.ROLL_DICE, { gameId: game.id });
+  };
 
   const myBets = me?.bets ?? [];
+  const hasPassLine = myBets.some(b => b.type === 'PASS_LINE' || b.type === 'DONT_PASS');
 
-  const canRepeat = isShooter && isComeOut && lastShooterBets.length > 0 && myBets.length === 0 &&
+  const canRepeat = isShooter && isComeOut && lastShooterBets.length > 0 && !hasPassLine &&
     lastShooterBets.every(b => {
       const cap = b.type === 'PASS_LINE' && passLineMax !== null ? passLineMax : Infinity;
       return (me?.chips ?? 0) >= Math.min(b.amount, cap);
     });
-
-  const hasPassLine = myBets.some(b => b.type === 'PASS_LINE' || b.type === 'DONT_PASS');
-  const needsBetToRoll = isComeOut && !hasPassLine;
 
   return (
     <div className="space-y-4">
@@ -137,16 +144,9 @@ export default function BettingPanel({ send, mobile = false }: Props) {
             ))}
           </div>
 
-          {/* Come-out: Pass Line only */}
+          {/* Come-out: show cap notice and repeat option */}
           {isShooter && isComeOut && (
             <div className="space-y-2">
-              <button
-                onClick={() => placeBet('PASS_LINE', 0)}
-                className="w-full flex items-center justify-between bg-gray-800 hover:bg-gray-700 border border-gray-600 hover:border-green-500 rounded-lg px-4 py-3 transition-colors"
-              >
-                <span className="font-medium text-white">Pass Line</span>
-                <span className="text-xs text-gray-400">1:1</span>
-              </button>
               {passLineMax !== null && passLineMax < amountCents && (
                 <p className="text-xs text-yellow-500 text-center">
                   Capped at {formatChips(passLineMax)} (opponent's balance)
@@ -163,20 +163,26 @@ export default function BettingPanel({ send, mobile = false }: Props) {
             </div>
           )}
 
-          {/* Point phase: Place bets on numbers */}
-          {isShooter && isPointPhase && (
+          {/* Number buttons — shown always, grayed out on come-out */}
+          {isShooter && (isComeOut || isPointPhase) && (
             <div>
-              <div className="text-xs text-gray-500 mb-2">Place a Number (wins on hit, loses on 7)</div>
+              <div className={`text-xs mb-2 ${isPointPhase ? 'text-gray-500' : 'text-gray-700'}`}>
+                Place a Number (wins on hit, loses on 7)
+                {isComeOut && <span className="ml-1 text-gray-700">— available after point is set</span>}
+              </div>
               <div className="grid grid-cols-3 gap-2">
                 {PLACE_NUMBERS.map((n) => {
                   const alreadyBet = myBets.some(b => b.type === 'PLACE' && b.number === n);
+                  const locked = isComeOut;
                   return (
                     <button
                       key={n}
-                      onClick={() => placeBet('PLACE', n)}
-                      disabled={alreadyBet}
+                      onClick={() => !locked && placeBet('PLACE', n)}
+                      disabled={locked || alreadyBet}
                       className={`flex flex-col items-center justify-center rounded-lg px-2 py-3 border transition-colors ${
-                        alreadyBet
+                        locked
+                          ? 'border-gray-800 bg-gray-900 opacity-30 cursor-not-allowed'
+                          : alreadyBet
                           ? 'border-green-700 bg-green-900/30 opacity-60 cursor-not-allowed'
                           : 'bg-gray-800 hover:bg-gray-700 border-gray-600 hover:border-green-500'
                       }`}
@@ -194,22 +200,12 @@ export default function BettingPanel({ send, mobile = false }: Props) {
 
       {/* Roll button — shooter only */}
       {isShooter && (
-        <div>
-          <button
-            onClick={handleRoll}
-            disabled={needsBetToRoll}
-            className={`w-full text-white font-bold rounded-xl transition-colors ${mobile ? 'py-4 text-xl' : 'py-5 text-2xl'} ${
-              needsBetToRoll
-                ? 'bg-gray-700 opacity-50 cursor-not-allowed'
-                : 'bg-green-600 hover:bg-green-500 pulse-glow'
-            }`}
-          >
-            🎲 Roll Dice
-          </button>
-          {needsBetToRoll && (
-            <p className="text-center text-xs text-yellow-500 mt-1.5">Place a Pass Line bet first</p>
-          )}
-        </div>
+        <button
+          onClick={handleRoll}
+          className={`w-full text-white font-bold rounded-xl bg-green-600 hover:bg-green-500 pulse-glow transition-colors ${mobile ? 'py-4 text-xl' : 'py-5 text-2xl'}`}
+        >
+          🎲 Roll Dice
+        </button>
       )}
 
       {!isShooter && (
