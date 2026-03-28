@@ -1,6 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import type { Game, BetResult } from '../types/game';
+import type { Game, BetResult, Bet } from '../types/game';
 import type {
   DiceRolledPayload,
   BetsResolvedPayload,
@@ -30,6 +30,7 @@ interface GameState {
   wsConnected: boolean;
   rollOutcome: RollOutcome | null;
   pendingRollLabel: string;
+  lastShooterBets: Pick<Bet, 'type' | 'amount' | 'number'>[];
 }
 
 const initialState: GameState = {
@@ -43,6 +44,7 @@ const initialState: GameState = {
   wsConnected: false,
   rollOutcome: null,
   pendingRollLabel: '',
+  lastShooterBets: [],
 };
 
 const gameSlice = createSlice({
@@ -73,6 +75,13 @@ const gameSlice = createSlice({
     diceRolled(state, action: PayloadAction<DiceRolledPayload>) {
       state.pendingRoll = action.payload;
       state.diceAnimation = 'shaking';
+      // Snapshot shooter's come-out bets so they can repeat them next time
+      if (state.game?.phase === 'COME_OUT' && state.myPlayerId) {
+        const shooter = state.game.players.find(p => p.id === state.myPlayerId);
+        if (shooter && shooter.bets.length > 0) {
+          state.lastShooterBets = shooter.bets.map(b => ({ type: b.type, amount: b.amount, number: b.number }));
+        }
+      }
       // Pre-compute label now, before phase transitions arrive
       const total = action.payload.die1 + action.payload.die2;
       if (state.game?.phase === 'POINT_PHASE') {

@@ -15,7 +15,6 @@ interface BetButton {
   label: string;
   payout: string;
   number?: number;
-  pointPhaseOnly?: boolean;
 }
 
 const COME_OUT_BETS: BetButton[] = [
@@ -43,6 +42,7 @@ const POINT_PHASE_BETS: BetButton[] = [
 export default function BettingPanel({ send, mobile = false }: Props) {
   const game = useSelector((s: RootState) => s.game.game);
   const myPlayerId = useSelector((s: RootState) => s.game.myPlayerId);
+  const lastShooterBets = useSelector((s: RootState) => s.game.lastShooterBets);
   const [amount, setAmount] = useState('10');
   const [justPlaced, setJustPlaced] = useState<string | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -50,6 +50,7 @@ export default function BettingPanel({ send, mobile = false }: Props) {
   if (!game) return null;
 
   const me = game.players.find((p) => p.id === myPlayerId);
+  const opponent = game.players.find((p) => p.id !== myPlayerId);
   const isShooter = game.shooterId === myPlayerId;
   const isComeOut = game.phase === 'COME_OUT';
   const isPointPhase = game.phase === 'POINT_PHASE';
@@ -57,17 +58,19 @@ export default function BettingPanel({ send, mobile = false }: Props) {
 
   if (!canBet) return null;
 
-  // Pass/Dont-pass odds bets
-  const passOddsBets: BetButton[] = isPointPhase && game.point
-    ? [
-        { type: 'PASS_ODDS', label: `Pass Odds (${game.point})`, payout: payoutLabel('PASS_ODDS', game.point) },
-        { type: 'DONT_ODDS', label: `Don't Pass Odds (${game.point})`, payout: payoutLabel('DONT_ODDS', game.point) },
-      ]
-    : [];
+  // Max Pass Line bet is capped at what the opponent can afford (they auto-match)
+  const passLineMax = isComeOut && isShooter && opponent ? opponent.chips : null;
 
-  const handleBet = (bet: BetButton) => {
-    const amountCents = centsFromDollars(parseFloat(amount));
+  const handleBet = (bet: BetButton, overrideAmount?: number) => {
+    let amountCents = overrideAmount ?? centsFromDollars(parseFloat(amount));
     if (isNaN(amountCents) || amountCents <= 0) return;
+
+    // Cap Pass Line / Don't Pass at opponent's chips to ensure equal matching
+    if ((bet.type === 'PASS_LINE' || bet.type === 'DONT_PASS') && passLineMax !== null) {
+      amountCents = Math.min(amountCents, passLineMax);
+      if (amountCents <= 0) return;
+    }
+
     send(MSG.PLACE_BET, {
       gameId: game.id,
       betType: bet.type,
@@ -78,22 +81,55 @@ export default function BettingPanel({ send, mobile = false }: Props) {
     setTimeout(() => setJustPlaced(null), 2000);
   };
 
+  const handleRepeatBets = () => {
+    for (const b of lastShooterBets) {
+      send(MSG.PLACE_BET, {
+        gameId: game.id,
+        betType: b.type,
+        amount: b.amount,
+        number: b.number,
+      });
+    }
+    const total = lastShooterBets.reduce((s, b) => s + b.amount, 0);
+    setJustPlaced(`Same as last roll (${formatChips(total)})`);
+    setTimeout(() => setJustPlaced(null), 2000);
+  };
+
   const handleRoll = () => {
     send(MSG.ROLL_DICE, { gameId: game.id });
   };
 
   const myBets = me?.bets ?? [];
 
+  // Pass/Don't-pass odds bets (point phase only)
+  const passOddsBets: BetButton[] = isPointPhase && game.point
+    ? [
+        { type: 'PASS_ODDS', label: `Pass Odds (${game.point})`, payout: payoutLabel('PASS_ODDS', game.point) },
+        { type: 'DONT_ODDS', label: `Don't Pass Odds (${game.point})`, payout: payoutLabel('DONT_ODDS', game.point) },
+      ]
+    : [];
+
+  // Can repeat last bet: shooter, come-out, have previous bets, have enough chips
+  const canRepeat = isShooter && isComeOut && lastShooterBets.length > 0 && myBets.length === 0 &&
+    lastShooterBets.every(b => {
+      const needed = (b.type === 'PASS_LINE' || b.type === 'DONT_PASS') && passLineMax !== null
+        ? Math.min(b.amount, passLineMax)
+        : b.amount;
+      return (me?.chips ?? 0) >= needed;
+    });
+
   return (
     <div className="space-y-4">
-      {/* Bet placed confirmation */}
-      {justPlaced && (
-        <div className="bg-green-800/80 border border-green-600 text-green-200 text-sm font-medium px-4 py-2 rounded-lg text-center fade-in-up">
-          ✓ Bet placed: {justPlaced}
-        </div>
-      )}
+      {/* Toast overlay — absolutely positioned, doesn't shift layout */}
+      <div className="relative h-0">
+        {justPlaced && (
+          <div className="absolute top-0 left-0 right-0 z-10 bg-green-800/95 border border-green-600 text-green-200 text-sm font-medium px-4 py-2 rounded-lg text-center fade-in-up shadow-lg pointer-events-none">
+            ✓ {justPlaced}
+          </div>
+        )}
+      </div>
 
-      {/* My active bets — always visible */}
+      {/* My active bets */}
       <div className="bg-gray-900 border border-green-900 rounded-xl p-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-xs font-medium text-green-400 uppercase tracking-wider">Your Bets on the Board</h3>
@@ -117,7 +153,7 @@ export default function BettingPanel({ send, mobile = false }: Props) {
         )}
       </div>
 
-      {/* Bet amount */}
+      {/* Bet amount + buttons */}
       <div className="bg-gray-900 border border-gray-700 rounded-xl p-4">
         <div className="mb-3">
           <label className="text-xs text-gray-500 mb-1.5 block">Bet Amount</label>
@@ -144,6 +180,21 @@ export default function BettingPanel({ send, mobile = false }: Props) {
               </button>
             ))}
           </div>
+          {/* Repeat last bet button */}
+          {canRepeat && (
+            <button
+              onClick={handleRepeatBets}
+              className="w-full mt-2 text-xs font-medium py-2 rounded-lg bg-blue-900/40 hover:bg-blue-800/60 text-blue-300 border border-blue-700 hover:border-blue-500 transition-colors"
+            >
+              ↺ Same as last roll — {lastShooterBets.map(b => `${betLabel(b.type, b.number)} ${formatChips(b.amount)}`).join(' + ')}
+            </button>
+          )}
+          {/* Pass Line max cap notice */}
+          {passLineMax !== null && passLineMax < centsFromDollars(parseFloat(amount)) && (
+            <p className="text-xs text-yellow-500 mt-1 text-center">
+              Pass Line capped at {formatChips(passLineMax)} (opponent's balance)
+            </p>
+          )}
         </div>
 
         {/* Come-out bets */}
@@ -151,7 +202,6 @@ export default function BettingPanel({ send, mobile = false }: Props) {
           <div className="text-xs text-gray-500 mb-2">Core Bets</div>
           <div className="grid grid-cols-2 gap-2">
             {COME_OUT_BETS.filter(bet =>
-              // Shooter must bet Pass Line (on themselves), never Don't Pass
               !(isShooter && bet.type === 'DONT_PASS')
             ).map((bet, i) => (
               <BetBtn key={i} bet={bet} onBet={handleBet} />
@@ -214,7 +264,7 @@ export default function BettingPanel({ send, mobile = false }: Props) {
               🎲 Roll Dice
             </button>
             {needsBet && (
-              <p className="text-center text-xs text-yellow-500 mt-1.5">Place a Pass Line or Don't Pass bet first</p>
+              <p className="text-center text-xs text-yellow-500 mt-1.5">Place a Pass Line bet first</p>
             )}
           </div>
         );
