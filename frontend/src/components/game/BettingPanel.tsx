@@ -4,6 +4,13 @@ import type { RootState } from '../../store/store';
 import { MSG } from '../../types/websocket';
 import { formatChips, betLabel, payoutLabel, centsFromDollars } from '../../utils/format';
 
+// Lay multipliers for place bets (numerator/denominator)
+const LAY_RATIO: Record<number, [number, number]> = {
+  4: [2, 1], 10: [2, 1],
+  5: [3, 2],  9: [3, 2],
+  6: [6, 5],  8: [6, 5],
+};
+
 interface Props {
   send: (type: string, payload: unknown) => void;
   mobile?: boolean;
@@ -29,10 +36,14 @@ export default function BettingPanel({ send, mobile = false }: Props) {
 
   if (!canBet) return null;
 
-  // Pass Line cap: non-shooter auto-matches, so max = opponent's chips
-  const passLineMax = isComeOut && isShooter && opponent ? opponent.chips : null;
+  // Pass Line cap: shooter can't bet more than opponent has (auto-match) or more than they have
+  const passLineMax = isComeOut && isShooter && opponent
+    ? Math.min(me?.chips ?? 0, opponent.chips)
+    : null;
 
-  const amountCents = centsFromDollars(parseFloat(amount));
+  // Effective amount: raw input capped at player's own chips
+  const rawCents = centsFromDollars(parseFloat(amount));
+  const amountCents = Math.min(rawCents, me?.chips ?? 0);
 
   const placeBet = (betType: string, num: number, overrideCents?: number) => {
     let cents = overrideCents ?? amountCents;
@@ -62,7 +73,7 @@ export default function BettingPanel({ send, mobile = false }: Props) {
   };
 
   const handleRoll = () => {
-    // On come-out, auto-place Pass Line at the selected amount before rolling
+    // On come-out, auto-place Pass Line — capped at both players' chips
     if (isComeOut && !hasPassLine) {
       let cents = amountCents;
       if (passLineMax !== null) cents = Math.min(cents, passLineMax);
@@ -70,6 +81,14 @@ export default function BettingPanel({ send, mobile = false }: Props) {
       send(MSG.PLACE_BET, { gameId: game.id, betType: 'PASS_LINE', amount: cents, number: 0 });
     }
     send(MSG.ROLL_DICE, { gameId: game.id });
+  };
+
+  // For place bets: check both shooter and non-shooter can cover their side
+  const canAffordPlace = (n: number): boolean => {
+    if (!me || !opponent) return false;
+    const [num, den] = LAY_RATIO[n] ?? [1, 1];
+    const layAmt = Math.floor(amountCents * num / den);
+    return me.chips >= amountCents && opponent.chips >= layAmt;
   };
 
   const myBets = me?.bets ?? [];
@@ -174,16 +193,20 @@ export default function BettingPanel({ send, mobile = false }: Props) {
                 {PLACE_NUMBERS.map((n) => {
                   const alreadyBet = myBets.some(b => b.type === 'PLACE' && b.number === n);
                   const locked = isComeOut;
+                  const cantAfford = isPointPhase && !alreadyBet && !canAffordPlace(n);
+                  const disabled = locked || alreadyBet || cantAfford;
                   return (
                     <button
                       key={n}
-                      onClick={() => !locked && placeBet('PLACE', n)}
-                      disabled={locked || alreadyBet}
+                      onClick={() => !disabled && placeBet('PLACE', n)}
+                      disabled={disabled}
                       className={`flex flex-col items-center justify-center rounded-lg px-2 py-3 border transition-colors ${
                         locked
                           ? 'border-gray-800 bg-gray-900 opacity-30 cursor-not-allowed'
                           : alreadyBet
                           ? 'border-green-700 bg-green-900/30 opacity-60 cursor-not-allowed'
+                          : cantAfford
+                          ? 'border-gray-800 bg-gray-900 opacity-30 cursor-not-allowed'
                           : 'bg-gray-800 hover:bg-gray-700 border-gray-600 hover:border-green-500'
                       }`}
                     >
