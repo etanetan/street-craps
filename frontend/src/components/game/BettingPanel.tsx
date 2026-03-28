@@ -21,7 +21,6 @@ const LAY_RATIO: Record<number, [number, number]> = {
 export default function BettingPanel({ send, mobile = false }: Props) {
   const game = useSelector((s: RootState) => s.game.game);
   const myPlayerId = useSelector((s: RootState) => s.game.myPlayerId);
-  const lastShooterBets = useSelector((s: RootState) => s.game.lastShooterBets);
   const [amount, setAmount] = useState('10');
   const [justPlaced, setJustPlaced] = useState<string | null>(null);
 
@@ -52,17 +51,6 @@ export default function BettingPanel({ send, mobile = false }: Props) {
     setTimeout(() => setJustPlaced(null), 2000);
   };
 
-  const handleRepeatBets = () => {
-    for (const b of lastShooterBets) {
-      let cents = b.amount;
-      if (b.type === 'PASS_LINE' && passLineMax !== null) cents = Math.min(cents, passLineMax);
-      if (cents > 0) send(MSG.PLACE_BET, { gameId: game.id, betType: b.type, amount: cents, number: b.number });
-    }
-    const total = lastShooterBets.reduce((s, b) => s + b.amount, 0);
-    setJustPlaced(`Same as last roll (${formatChips(total)})`);
-    setTimeout(() => setJustPlaced(null), 2000);
-  };
-
   const handleRoll = () => {
     if (isComeOut && !hasPassLine) {
       let cents = amountCents;
@@ -82,12 +70,6 @@ export default function BettingPanel({ send, mobile = false }: Props) {
 
   const myBets = me?.bets ?? [];
   const hasPassLine = myBets.some(b => b.type === 'PASS_LINE' || b.type === 'DONT_PASS');
-
-  const canRepeat = isShooter && isComeOut && lastShooterBets.length > 0 && !hasPassLine &&
-    lastShooterBets.every(b => {
-      const cap = b.type === 'PASS_LINE' && passLineMax !== null ? passLineMax : Infinity;
-      return (me?.chips ?? 0) >= Math.min(b.amount, cap);
-    });
 
   return (
     <div className="space-y-3">
@@ -165,23 +147,11 @@ export default function BettingPanel({ send, mobile = false }: Props) {
             ))}
           </div>
 
-          {/* Come-out: cap notice + repeat */}
-          {isShooter && isComeOut && (
-            <div className="space-y-2">
-              {passLineMax !== null && passLineMax < amountCents && (
-                <p className="text-xs text-yellow-500 text-center">
-                  Capped at {formatChips(passLineMax)} (opponent's balance)
-                </p>
-              )}
-              {canRepeat && (
-                <button
-                  onClick={handleRepeatBets}
-                  className="w-full text-xs font-medium py-2 rounded-lg bg-blue-900/40 hover:bg-blue-800/60 text-blue-300 border border-blue-700 hover:border-blue-500 transition-colors"
-                >
-                  ↺ Same as last — {lastShooterBets.map(b => `${betLabel(b.type, b.number || undefined)} ${formatChips(b.amount)}`).join(' + ')}
-                </button>
-              )}
-            </div>
+          {/* Come-out: cap notice */}
+          {isShooter && isComeOut && passLineMax !== null && passLineMax < amountCents && (
+            <p className="text-xs text-yellow-500 text-center">
+              Capped at {formatChips(passLineMax)} (opponent's balance)
+            </p>
           )}
 
           {/* Number buttons */}
