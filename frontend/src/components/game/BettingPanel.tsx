@@ -128,22 +128,26 @@ export default function BettingPanel({ send, mobile = false }: Props) {
 
       {/* Bet amount */}
       <div className="bg-gray-900 border border-gray-700 rounded-xl p-4">
-        <div className="flex items-center gap-3 mb-4">
-          <label className="text-sm text-gray-400 whitespace-nowrap">Bet $</label>
+        <div className="mb-3">
+          <label className="text-xs text-gray-500 mb-1.5 block">Bet Amount</label>
           <input
             type="number"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             min="1"
             step="1"
-            className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-center font-mono focus:outline-none focus:border-green-500"
+            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-center font-mono text-lg focus:outline-none focus:border-green-500"
           />
-          <div className="flex gap-1">
-            {[5, 10, 25, 50, 100].map((v) => (
+          <div className="flex gap-1.5 mt-2">
+            {[1, 5, 10, 25, 50, 100].map((v) => (
               <button
                 key={v}
                 onClick={() => setAmount(String(v))}
-                className="bg-gray-700 hover:bg-gray-600 text-xs text-gray-300 px-2 py-1.5 rounded transition-colors"
+                className={`flex-1 text-xs font-medium py-1.5 rounded-lg transition-colors ${
+                  amount === String(v)
+                    ? 'bg-green-700 text-white border border-green-500'
+                    : 'bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700'
+                }`}
               >
                 ${v}
               </button>
