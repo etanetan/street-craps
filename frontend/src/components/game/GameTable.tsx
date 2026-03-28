@@ -38,6 +38,8 @@ export default function GameTable({ send }: Props) {
   const requestEndGame = () => send(MSG.END_GAME, { gameId: game?.id });
   const cancelEndGame = () => send(MSG.CANCEL_END_GAME, { gameId: game?.id });
 
+  const inGame = game?.phase === 'COME_OUT' || game?.phase === 'POINT_PHASE';
+
   // Warn before closing/refreshing tab during an active game
   useEffect(() => {
     if (!inGame) return;
@@ -65,8 +67,6 @@ export default function GameTable({ send }: Props) {
       </div>
     );
   }
-
-  const inGame = game.phase === 'COME_OUT' || game.phase === 'POINT_PHASE';
 
   return (
     <div className="min-h-screen bg-gray-950">
