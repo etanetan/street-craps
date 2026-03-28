@@ -163,20 +163,26 @@ export default function BettingPanel({ send, mobile = false }: Props) {
             </div>
           )}
 
-          {/* Point phase: Place bets on numbers */}
-          {isShooter && isPointPhase && (
+          {/* Number buttons — shown always, grayed out on come-out */}
+          {isShooter && (isComeOut || isPointPhase) && (
             <div>
-              <div className="text-xs text-gray-500 mb-2">Place a Number (wins on hit, loses on 7)</div>
+              <div className={`text-xs mb-2 ${isPointPhase ? 'text-gray-500' : 'text-gray-700'}`}>
+                Place a Number (wins on hit, loses on 7)
+                {isComeOut && <span className="ml-1 text-gray-700">— available after point is set</span>}
+              </div>
               <div className="grid grid-cols-3 gap-2">
                 {PLACE_NUMBERS.map((n) => {
                   const alreadyBet = myBets.some(b => b.type === 'PLACE' && b.number === n);
+                  const locked = isComeOut;
                   return (
                     <button
                       key={n}
-                      onClick={() => placeBet('PLACE', n)}
-                      disabled={alreadyBet}
+                      onClick={() => !locked && placeBet('PLACE', n)}
+                      disabled={locked || alreadyBet}
                       className={`flex flex-col items-center justify-center rounded-lg px-2 py-3 border transition-colors ${
-                        alreadyBet
+                        locked
+                          ? 'border-gray-800 bg-gray-900 opacity-30 cursor-not-allowed'
+                          : alreadyBet
                           ? 'border-green-700 bg-green-900/30 opacity-60 cursor-not-allowed'
                           : 'bg-gray-800 hover:bg-gray-700 border-gray-600 hover:border-green-500'
                       }`}
