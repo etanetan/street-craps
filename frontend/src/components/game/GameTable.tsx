@@ -84,9 +84,9 @@ export default function GameTable({ send }: Props) {
       {/* Win/lose toast */}
       {rollOutcome && (
         <div className={`fixed top-6 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-xl font-bold text-lg shadow-2xl fade-in-up pointer-events-none whitespace-nowrap ${
-          rollOutcome.net > 0 ? 'bg-green-700 text-white' :
-          rollOutcome.net < 0 ? 'bg-red-800 text-white' :
-          'bg-gray-700 text-white'
+          rollOutcome.net > 0 ? 'bg-green-700/70 text-green-100 backdrop-blur-sm' :
+          rollOutcome.net < 0 ? 'bg-red-800/70 text-red-100 backdrop-blur-sm' :
+          'bg-gray-700/70 text-gray-100 backdrop-blur-sm'
         }`}>
           {rollOutcome.label && <span>{rollOutcome.label} </span>}
           {rollOutcome.net > 0 ? `+${formatChips(rollOutcome.net)}` :
