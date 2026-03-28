@@ -75,11 +75,11 @@ const gameSlice = createSlice({
     diceRolled(state, action: PayloadAction<DiceRolledPayload>) {
       state.pendingRoll = action.payload;
       state.diceAnimation = 'shaking';
-      // Snapshot shooter's come-out bets so they can repeat them next time
+      // Snapshot MY bets only when I am the shooter rolling come-out
       if (state.game?.phase === 'COME_OUT' && state.myPlayerId) {
-        const shooter = state.game.players.find(p => p.id === state.myPlayerId);
-        if (shooter && shooter.bets.length > 0) {
-          state.lastShooterBets = shooter.bets.map(b => ({ type: b.type, amount: b.amount, number: b.number }));
+        const me = state.game.players.find(p => p.id === state.myPlayerId);
+        if (me && me.isShooter && me.bets.length > 0) {
+          state.lastShooterBets = me.bets.map(b => ({ type: b.type, amount: b.amount, number: b.number }));
         }
       }
       // Pre-compute label now, before phase transitions arrive
