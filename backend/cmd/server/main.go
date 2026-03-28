@@ -56,7 +56,7 @@ func main() {
 
 	// REST handlers
 	authH := handlers.NewAuthHandler(userRepo, jwtService)
-	gameH := handlers.NewGameHandler(gameRepo, userRepo, gameManager, jwtService)
+	gameH := handlers.NewGameHandler(gameRepo, userRepo, gameManager, jwtService, wsHub)
 
 	// Router
 	mux := http.NewServeMux()

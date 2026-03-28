@@ -10,6 +10,7 @@ import (
 
 	"github.com/etanetan/street-craps/backend/internal/auth"
 	"github.com/etanetan/street-craps/backend/internal/game"
+	"github.com/etanetan/street-craps/backend/internal/hub"
 	"github.com/etanetan/street-craps/backend/internal/models"
 	"github.com/etanetan/street-craps/backend/internal/repository"
 	"github.com/google/uuid"
@@ -20,10 +21,11 @@ type GameHandler struct {
 	users   *repository.UserRepo
 	manager *game.Manager
 	jwt     *auth.Service
+	hub     *hub.Hub
 }
 
-func NewGameHandler(games *repository.GameRepo, users *repository.UserRepo, manager *game.Manager, jwt *auth.Service) *GameHandler {
-	return &GameHandler{games: games, users: users, manager: manager, jwt: jwt}
+func NewGameHandler(games *repository.GameRepo, users *repository.UserRepo, manager *game.Manager, jwt *auth.Service, h *hub.Hub) *GameHandler {
+	return &GameHandler{games: games, users: users, manager: manager, jwt: jwt, hub: h}
 }
 
 type createGameRequest struct {
@@ -154,6 +156,11 @@ func (h *GameHandler) JoinGame(w http.ResponseWriter, r *http.Request) {
 	if err := h.games.Save(r.Context(), g); err != nil {
 		writeError(w, http.StatusInternalServerError, "server_error", "Failed to save")
 		return
+	}
+
+	// Notify already-connected players that someone new joined
+	if h.hub != nil {
+		h.hub.Broadcast(g.ID, models.MsgGameState, g)
 	}
 
 	token, _ := h.jwt.SignPlayerToken(playerID, g.ID, userID, req.Name, claims == nil)
