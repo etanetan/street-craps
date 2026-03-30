@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 @layer base {
   body {
     @apply bg-gray-950 text-white m-0;
